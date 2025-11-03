@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
@@ -17,7 +18,8 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            // password omitted; will be generated server-side
+            'role' => ['required', 'string', Rule::in(['super-admin', 'admin', 'manager', 'user'])],
             // optional: assign companies on create
             'company_ids' => ['array'],
             'company_ids.*' => ['string'],

@@ -24,6 +24,7 @@ class UpdateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($target?->getKey(), 'id')],
             'password' => ['nullable', 'string', 'min:8'],
+            'role' => ['sometimes', 'string', Rule::in(['super-admin', 'admin', 'manager', 'user'])],
             'company_ids' => ['array'],
             'company_ids.*' => ['string'],
         ];

@@ -13,7 +13,13 @@ class UserPolicy
     public function viewAny(User $user): bool
     {
         // Super Admin via Gate::before
-        return $user->hasRole(RolesEnum::ADMIN->value);
+        // Admin can view list of users they created
+        // Manager/User can view list filtered to users sharing both company and team
+        return $user->hasAnyRole([
+            RolesEnum::ADMIN->value,
+            RolesEnum::MANAGER->value,
+            RolesEnum::USER->value,
+        ]);
     }
 
     /**
@@ -29,6 +35,17 @@ class UserPolicy
             return $target->created_by === $user->id;
         }
 
+        // Manager/User can view users who share BOTH company and team
+        if ($user->hasAnyRole([RolesEnum::MANAGER->value, RolesEnum::USER->value])) {
+            $sharesCompany = $target->companies()->whereIn('companies.id', $user->companies()->pluck('companies.id'))->exists();
+            if (! $sharesCompany) {
+                return false;
+            }
+            $sharesTeam = $target->teams()->whereIn('teams.id', $user->teams()->pluck('teams.id'))->exists();
+
+            return $sharesTeam;
+        }
+
         return false;
     }
 
@@ -37,7 +54,8 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasAnyRole([RolesEnum::ADMIN->value]);
+        // Super Admin via Gate::before
+        return $user->hasRole(RolesEnum::ADMIN->value);
     }
 
     /**

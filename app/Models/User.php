@@ -65,6 +65,15 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    /**
+     * Teams this user is a member of.
+     */
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class)
+            ->withTimestamps();
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
