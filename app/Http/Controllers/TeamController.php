@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class TeamController extends BaseController
@@ -107,6 +108,12 @@ class TeamController extends BaseController
 
             $data['created_by'] = $auth->getKey();
 
+            // Handle logo upload
+            if ($request->hasFile('logo')) {
+                $path = $request->file('logo')->store('teams', 'public');
+                $data['logo'] = Storage::url($path);
+            }
+
             $team = Team::create($data);
 
             // Sync members limited to selected company's users
@@ -195,6 +202,12 @@ class TeamController extends BaseController
                 if (! $allowedCompanies->contains($data['company_id'])) {
                     abort(403);
                 }
+            }
+
+            // Handle logo upload
+            if ($request->hasFile('logo')) {
+                $path = $request->file('logo')->store('teams', 'public');
+                $data['logo'] = Storage::url($path);
             }
 
             $team->update($data);

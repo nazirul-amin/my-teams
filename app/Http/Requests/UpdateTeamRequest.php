@@ -29,14 +29,14 @@ class UpdateTeamRequest extends FormRequest
 
         return [
             'company_id' => ['sometimes', 'exists:companies,id'],
-            'name' => ['sometimes', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'slug' => [
-                'sometimes',
+                'required',
                 'string',
                 'max:255',
                 Rule::unique('teams', 'slug')->ignore($team?->getKey()),
             ],
-            'logo' => ['nullable', 'string', 'max:2048'],
+            'logo' => ['nullable', 'image', 'max:8192'],
             'user_ids' => ['sometimes', 'array'],
             'user_ids.*' => ['distinct', 'exists:users,id'],
         ];

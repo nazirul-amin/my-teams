@@ -12,9 +12,11 @@ interface Company {
   website?: string | null;
   phone?: string | null;
   email?: string | null;
-  cover_photo?: string | null;
+  logo?: string | null;
+  bg_light?: string | null;
+  bg_dark?: string | null;
 }
-interface Team { id: string | number; name: string }
+interface Team { id: string | number; name: string; logo?: string | null }
 interface User { id: string | number; name: string; email: string; profile?: Profile | null }
 interface Profile {
   bio?: string | null;
@@ -26,7 +28,6 @@ interface Profile {
   facebook?: string | null;
   instagram?: string | null;
   photo?: string | null;
-  cover_photo?: string | null;
 }
 
 interface Props {
@@ -80,8 +81,8 @@ function saveVCard() {
   <div class="relative min-h-screen">
     <div class="relative mx-auto flex max-w-md h-screen flex-col items-center px-6 pb-24 pt-10 text-center">
       <img
-        v-if="props.company?.cover_photo"
-        :src="props.company.cover_photo"
+        v-if="props.company?.bg_light"
+        :src="props.company.bg_light"
         alt="cover"
         class="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
@@ -108,6 +109,26 @@ function saveVCard() {
       <div class="mt-10 max-w-sm space-y-2 z-1">
         <p class="text-base font-semibold text-neutral-900">{{ company.name }}</p>
         <p v-if="companyAddress" class="text-sm text-neutral-500">{{ companyAddress }}</p>
+      </div>
+
+      <div class="my-4 flex w-full max-w-sm items-center justify-between z-1">
+        <div class="flex-1">
+          <img
+            v-if="props.company?.logo"
+            :src="props.company.logo as string"
+            alt="company logo"
+            class="h-12 w-24 object-contain"
+          />
+          <span>{{ company.website }}</span>
+        </div>
+        <div class="flex-1 text-right">
+          <img
+            v-if="props.team?.logo"
+            :src="props.team.logo as string"
+            alt="team logo"
+            class="ml-auto h-12 w-24 object-contain"
+          />
+        </div>
       </div>
 
       <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-neutral-600 z-1">

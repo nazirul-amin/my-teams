@@ -21,14 +21,14 @@ const form = useForm({
   company_id: '',
   name: '',
   slug: '',
-  logo: '',
+  logo: null,
   user_ids: [],
 })
 
 const assignableUsers = ref(props.users)
 
 function submit() {
-  form.post('/teams', { preserveScroll: true })
+  form.post('/teams', { preserveScroll: true, forceFormData: true })
 }
 
 function slugify(v) {
@@ -87,8 +87,15 @@ watch(() => form.company_id, async (companyId) => {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field>
-            <FieldLabel for="logo">Logo URL</FieldLabel>
-            <UiInput id="logo" v-model="form.logo" />
+            <FieldLabel for="logo">Logo</FieldLabel>
+            <input
+              id="logo"
+              name="logo"
+              type="file"
+              accept="image/*"
+              @change="(e) => (form.logo = e.target?.files?.[0] ?? null)"
+              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+            />
             <FieldError v-if="form.errors.logo">{{ form.errors.logo }}</FieldError>
           </Field>
         </div>

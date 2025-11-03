@@ -23,14 +23,22 @@ const form = useForm({
   company_id: props.team?.company_id ?? '',
   name: props.team?.name ?? '',
   slug: props.team?.slug ?? '',
-  logo: props.team?.logo ?? '',
+  logo: null,
   user_ids: [...(props.assigned_user_ids ?? [])],
 })
 
 const assignableUsers = ref(props.users)
 
 function submit() {
-  form.put(`/teams/${props.team.id}`, { preserveScroll: true })
+  const originalTransform = form.transform
+  form.transform((data) => ({ ...data, _method: 'put' }))
+  form.post(`/teams/${props.team.id}`, {
+    preserveScroll: true,
+    forceFormData: true,
+    onFinish: () => {
+      form.transform = originalTransform
+    },
+  })
 }
 
 function destroyTeam() {
@@ -81,8 +89,18 @@ watch(() => form.company_id, async (companyId) => {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field>
-            <FieldLabel for="logo">Logo URL</FieldLabel>
-            <UiInput id="logo" v-model="form.logo" />
+            <FieldLabel for="logo">Logo</FieldLabel>
+            <input
+              id="logo"
+              name="logo"
+              type="file"
+              accept="image/*"
+              @change="(e) => (form.logo = e.target?.files?.[0] ?? null)"
+              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+            />
+            <div v-if="props.team?.logo" class="mt-2">
+              <img :src="props.team.logo" alt="Current team logo" class="h-16 w-16 rounded object-contain bg-white" />
+            </div>
             <FieldError v-if="form.errors.logo">{{ form.errors.logo }}</FieldError>
           </Field>
         </div>
