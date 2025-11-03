@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +22,9 @@ class ProfileController extends Controller
         return Inertia::render('settings/Profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'profile' => optional($request->user()->profile)->only([
+                'bio', 'position', 'phone', 'website', 'linkedin', 'twitter', 'facebook', 'instagram', 'photo', 'cover_photo',
+            ]),
         ]);
     }
 
@@ -29,13 +33,33 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $validated = $request->validated();
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
+
+        // Upsert profile fields
+        $profileData = array_intersect_key($validated, array_flip([
+            'bio', 'position', 'phone', 'website', 'linkedin', 'twitter', 'facebook', 'instagram', 'cover_photo',
+        ]));
+
+        // Handle uploaded profile photo
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('profiles', 'public');
+            $profileData['photo'] = Storage::url($path);
+        }
+        if (! empty($profileData)) {
+            $user->profile()->updateOrCreate([], $profileData);
+        }
 
         return to_route('profile.edit');
     }

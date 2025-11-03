@@ -15,6 +15,8 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $profileId = optional($this->user()->profile)->getKey();
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
@@ -25,6 +27,21 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            // Profile fields
+            'bio' => ['nullable', 'string', 'max:1000'],
+            'position' => ['nullable', 'string', 'max:255'],
+            'phone' => [
+                'required',
+                'string',
+                Rule::unique('profiles', 'phone')->ignore($profileId, 'id'),
+            ],
+            'website' => ['nullable', 'string', 'max:255'],
+            'linkedin' => ['nullable', 'string', 'max:255'],
+            'twitter' => ['nullable', 'string', 'max:255'],
+            'facebook' => ['nullable', 'string', 'max:255'],
+            'instagram' => ['nullable', 'string', 'max:255'],
+            'photo' => ['nullable', 'image', 'max:4096'],
+            'cover_photo' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

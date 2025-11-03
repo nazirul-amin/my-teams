@@ -36,6 +36,7 @@ class StoreCompanyRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
+            'cover_photo' => ['nullable', 'image', 'max:8192'],
             'user_ids' => ['array'],
             'user_ids.*' => ['string'],
         ];

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -82,5 +83,21 @@ class User extends Authenticatable
     public function createdUsers(): HasMany
     {
         return $this->hasMany(User::class, 'created_by');
+    }
+
+    /**
+     * One-to-one profile for this user.
+     */
+    public function profile(): HasOne
+    {
+        return $this->hasOne(Profile::class);
+    }
+
+    /**
+     * One-to-one contact card for this user.
+     */
+    public function contactCard(): HasOne
+    {
+        return $this->hasOne(ContactCard::class);
     }
 }

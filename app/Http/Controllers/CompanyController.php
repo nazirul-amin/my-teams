@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class CompanyController extends BaseController
@@ -83,6 +84,12 @@ class CompanyController extends BaseController
             Gate::authorize('create', Company::class);
             $data = $request->validated();
             $data['created_by'] = $request->user()->getKey();
+
+            // Handle cover photo upload
+            if ($request->hasFile('cover_photo')) {
+                $path = $request->file('cover_photo')->store('companies', 'public');
+                $data['cover_photo'] = Storage::url($path);
+            }
 
             $company = Company::create($data);
 
@@ -160,6 +167,12 @@ class CompanyController extends BaseController
         try {
             Gate::authorize('update', $company);
             $data = $request->validated();
+            // Handle cover photo upload
+            if ($request->hasFile('cover_photo')) {
+                $path = $request->file('cover_photo')->store('companies', 'public');
+                $data['cover_photo'] = Storage::url($path);
+            }
+
             $company->update($data);
 
             // Sync members based on role constraints

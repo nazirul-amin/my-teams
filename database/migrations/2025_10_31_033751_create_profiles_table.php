@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('profiles', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->foreignIdFor(User::class);
+            $table->foreignIdFor(User::class)->unique();
             $table->string('bio')->nullable();
             $table->string('position')->nullable();
             $table->string('phone')->unique();

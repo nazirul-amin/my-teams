@@ -20,7 +20,7 @@ class ProfilePolicy
      */
     public function view(User $user, Profile $profile): bool
     {
-        return false;
+        return $profile->user_id === $user->getKey();
     }
 
     /**
@@ -28,6 +28,7 @@ class ProfilePolicy
      */
     public function create(User $user): bool
     {
+        // Profiles are created via updateOrCreate through settings; no direct create
         return false;
     }
 
@@ -36,7 +37,7 @@ class ProfilePolicy
      */
     public function update(User $user, Profile $profile): bool
     {
-        return false;
+        return $profile->user_id === $user->getKey();
     }
 
     /**

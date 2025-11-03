@@ -36,6 +36,7 @@ const form = useForm({
   city: '',
   state: '',
   country: '',
+  cover_photo: null,
   user_ids: [],
 })
 
@@ -147,6 +148,19 @@ watch(() => form.name, (v) => {
               <FieldError v-if="form.errors.country">{{ form.errors.country }}</FieldError>
             </Field>
           </div>
+
+          <Field>
+            <FieldLabel for="cover_photo">Cover photo</FieldLabel>
+            <input
+              id="cover_photo"
+              name="cover_photo"
+              type="file"
+              accept="image/*"
+              @change="(e) => (form.cover_photo = e.target?.files?.[0] ?? null)"
+              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+            />
+            <FieldError v-if="form.errors.cover_photo">{{ form.errors.cover_photo }}</FieldError>
+          </Field>
 
           <Field>
             <MultiSelect

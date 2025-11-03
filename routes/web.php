@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ContactCardPublicController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -9,6 +10,9 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
+
+// Public contact card
+Route::get('c/{slug}', [ContactCardPublicController::class, 'show'])->name('contact-card.public.show');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');

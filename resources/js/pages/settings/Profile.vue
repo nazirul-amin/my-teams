@@ -17,9 +17,10 @@ import { type BreadcrumbItem } from '@/types';
 interface Props {
     mustVerifyEmail: boolean;
     status?: string;
+    profile?: Record<string, any> | null;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
@@ -40,7 +41,7 @@ const user = page.props.auth.user;
             <div class="flex flex-col space-y-6">
                 <HeadingSmall
                     title="Profile information"
-                    description="Update your name and email address"
+                    description="Update your name, email, and profile details"
                 />
 
                 <Form
@@ -48,6 +49,14 @@ const user = page.props.auth.user;
                     class="space-y-6"
                     v-slot="{ errors, processing, recentlySuccessful }"
                 >
+                    <div class="grid gap-2">
+                        <Label for="photo">Profile photo</Label>
+                        <Input id="photo" name="photo" type="file" accept="image/*" />
+                        <InputError class="mt-2" :message="errors.photo" />
+                        <div v-if="props.profile?.photo" class="mt-2">
+                            <img :src="props.profile.photo" alt="Current photo" class="h-16 w-16 rounded-full object-cover" />
+                        </div>
+                    </div>
                     <div class="grid gap-2">
                         <Label for="name">Name</Label>
                         <Input
@@ -77,6 +86,78 @@ const user = page.props.auth.user;
                         <InputError class="mt-2" :message="errors.email" />
                     </div>
 
+                    <div class="grid gap-2">
+                        <Label for="position">Position</Label>
+                        <Input
+                            id="position"
+                            name="position"
+                            class="mt-1 block w-full"
+                            :default-value="props.profile?.position ?? ''"
+                            placeholder="e.g. Product Manager"
+                        />
+                        <InputError class="mt-2" :message="errors.position" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="phone">Phone</Label>
+                        <Input
+                            id="phone"
+                            name="phone"
+                            class="mt-1 block w-full"
+                            :default-value="props.profile?.phone ?? ''"
+                            placeholder="Phone number"
+                            required
+                        />
+                        <InputError class="mt-2" :message="errors.phone" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="bio">Bio</Label>
+                        <Input
+                            id="bio"
+                            name="bio"
+                            class="mt-1 block w-full"
+                            :default-value="props.profile?.bio ?? ''"
+                            placeholder="Short bio"
+                        />
+                        <InputError class="mt-2" :message="errors.bio" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="website">Website</Label>
+                        <Input
+                            id="website"
+                            name="website"
+                            class="mt-1 block w-full"
+                            :default-value="props.profile?.website ?? ''"
+                            placeholder="https://example.com"
+                        />
+                        <InputError class="mt-2" :message="errors.website" />
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label for="linkedin">LinkedIn</Label>
+                            <Input id="linkedin" name="linkedin" :default-value="props.profile?.linkedin ?? ''" placeholder="LinkedIn URL" />
+                            <InputError class="mt-2" :message="errors.linkedin" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="twitter">Twitter</Label>
+                            <Input id="twitter" name="twitter" :default-value="props.profile?.twitter ?? ''" placeholder="Twitter URL" />
+                            <InputError class="mt-2" :message="errors.twitter" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="facebook">Facebook</Label>
+                            <Input id="facebook" name="facebook" :default-value="props.profile?.facebook ?? ''" placeholder="Facebook URL" />
+                            <InputError class="mt-2" :message="errors.facebook" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="instagram">Instagram</Label>
+                            <Input id="instagram" name="instagram" :default-value="props.profile?.instagram ?? ''" placeholder="Instagram URL" />
+                            <InputError class="mt-2" :message="errors.instagram" />
+                        </div>
+                    </div>
+
                     <div v-if="mustVerifyEmail && !user.email_verified_at">
                         <p class="-mt-4 text-sm text-muted-foreground">
                             Your email address is unverified.
@@ -102,8 +183,9 @@ const user = page.props.auth.user;
                         <Button
                             :disabled="processing"
                             data-test="update-profile-button"
-                            >Save</Button
                         >
+                            Save
+                        </Button>
 
                         <Transition
                             enter-active-class="transition ease-in-out"

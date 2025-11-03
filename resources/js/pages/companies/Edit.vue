@@ -27,11 +27,20 @@ const form = useForm({
   city: props.company.city || '',
   state: props.company.state || '',
   country: props.company.country || '',
+  cover_photo: null,
   user_ids: [...props.assigned_user_ids],
 })
 
 function submit() {
-  form.put(`/companies/${props.company.id}`, { preserveScroll: true })
+  const originalTransform = form.transform;
+  form.transform((data) => ({ ...data, _method: 'put' }));
+  form.post(`/companies/${props.company.id}`, {
+    preserveScroll: true,
+    forceFormData: true,
+    onFinish: () => {
+      form.transform = originalTransform;
+    },
+  })
 }
 
 const breadcrumbs = [
@@ -140,6 +149,22 @@ watch(() => form.name, (v) => {
             <FieldError v-if="form.errors.country">{{ form.errors.country }}</FieldError>
           </Field>
         </div>
+
+        <Field>
+          <FieldLabel for="cover_photo">Cover photo</FieldLabel>
+          <input
+            id="cover_photo"
+            name="cover_photo"
+            type="file"
+            accept="image/*"
+            @change="(e) => (form.cover_photo = e.target?.files?.[0] ?? null)"
+            class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+          />
+          <div v-if="props.company?.cover_photo" class="mt-2">
+            <img :src="props.company.cover_photo" alt="Current cover" class="h-24 w-full rounded object-cover" />
+          </div>
+          <FieldError v-if="form.errors.cover_photo">{{ form.errors.cover_photo }}</FieldError>
+        </Field>
 
         <Field>
           <MultiSelect
