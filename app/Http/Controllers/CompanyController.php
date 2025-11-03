@@ -2,18 +2,48 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RolesEnum;
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
 
-class CompanyController extends Controller
+class CompanyController extends BaseController
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        Gate::authorize('viewAny', Company::class);
+
+        $user = request()->user();
+
+        $query = Company::query()->with(['creator:id,name']);
+
+        // Super Admin: all; others: only membership
+        if (! $user->hasRole(RolesEnum::SUPERADMIN->value)) {
+            $query->whereHas('users', function ($q) use ($user) {
+                $q->where('user_id', $user->getKey());
+            });
+        }
+
+        // Optional simple filters
+        $this->applySearch($query, ['name', 'slug']);
+
+        $perPage = $this->perPage();
+
+        $companies = $query->orderByDesc('created_at')->paginate($perPage)->withQueryString();
+
+        return Inertia::render('companies/Index', [
+            'companies' => $companies,
+            'filters' => [
+                'search' => (string) request('search', ''),
+                'per_page' => $perPage,
+            ],
+        ]);
     }
 
     /**
@@ -21,7 +51,18 @@ class CompanyController extends Controller
      */
     public function create()
     {
-        //
+        Gate::authorize('create', Company::class);
+        $auth = request()->user();
+
+        $usersQuery = User::query();
+        if ($auth->hasRole(RolesEnum::ADMIN->value)) {
+            $usersQuery->where('created_by', $auth->getKey());
+        }
+        $users = $usersQuery->orderBy('name')->get(['id', 'name', 'email']);
+
+        return Inertia::render('companies/Create', [
+            'users' => $users,
+        ]);
     }
 
     /**
@@ -29,7 +70,32 @@ class CompanyController extends Controller
      */
     public function store(StoreCompanyRequest $request)
     {
-        //
+        try {
+            Gate::authorize('create', Company::class);
+            $data = $request->validated();
+            $data['created_by'] = $request->user()->getKey();
+
+            $company = Company::create($data);
+
+            // Sync additional members based on role constraints
+            $auth = $request->user();
+            $ids = collect($data['user_ids'] ?? [])->filter();
+
+            $assignable = User::query();
+            if ($auth->hasRole(RolesEnum::ADMIN->value)) {
+                $assignable->where('created_by', $auth->getKey());
+            }
+            $assignableIds = $assignable->whereIn('id', $ids)->pluck('id')->unique();
+            $company->users()->syncWithoutDetaching($assignableIds->all());
+
+            return $this->successRedirect('companies.index', 'Company created');
+        } catch (\Throwable $th) {
+            $this->logException($th, 'create company', [
+                'data' => $request->validated(),
+            ]);
+
+            return $this->errorBack('Failed to create company');
+        }
     }
 
     /**
@@ -37,7 +103,11 @@ class CompanyController extends Controller
      */
     public function show(Company $company)
     {
-        //
+        Gate::authorize('view', $company);
+
+        return Inertia::render('companies/Edit', [
+            'company' => $company,
+        ]);
     }
 
     /**
@@ -45,7 +115,20 @@ class CompanyController extends Controller
      */
     public function edit(Company $company)
     {
-        //
+        Gate::authorize('update', $company);
+        $auth = request()->user();
+
+        $usersQuery = User::query();
+        if ($auth->hasRole(RolesEnum::ADMIN->value)) {
+            $usersQuery->where('created_by', $auth->getKey());
+        }
+        $users = $usersQuery->orderBy('name')->get(['id', 'name', 'email']);
+
+        return Inertia::render('companies/Edit', [
+            'company' => $company,
+            'users' => $users,
+            'assigned_user_ids' => $company->users()->pluck('users.id'),
+        ]);
     }
 
     /**
@@ -53,7 +136,31 @@ class CompanyController extends Controller
      */
     public function update(UpdateCompanyRequest $request, Company $company)
     {
-        //
+        try {
+            Gate::authorize('update', $company);
+            $data = $request->validated();
+            $company->update($data);
+
+            // Sync members based on role constraints
+            $auth = $request->user();
+            $ids = collect($data['user_ids'] ?? [])->filter();
+
+            $assignable = User::query();
+            if ($auth->hasRole(RolesEnum::ADMIN->value)) {
+                $assignable->where('created_by', $auth->getKey());
+            }
+            $assignableIds = $assignable->whereIn('id', $ids)->pluck('id')->unique();
+            $company->users()->sync($assignableIds->all());
+
+            return $this->successRedirect('companies.index', 'Company updated');
+        } catch (\Throwable $th) {
+            $this->logException($th, 'update company', [
+                'company_id' => $company->getKey(),
+                'data' => $request->validated(),
+            ]);
+
+            return $this->errorBack('Failed to update company');
+        }
     }
 
     /**
@@ -61,6 +168,17 @@ class CompanyController extends Controller
      */
     public function destroy(Company $company)
     {
-        //
+        try {
+            Gate::authorize('delete', $company);
+            $company->delete();
+
+            return $this->successRedirect('companies.index', 'Company deleted');
+        } catch (\Throwable $th) {
+            $this->logException($th, 'delete company', [
+                'company_id' => $company->getKey(),
+            ]);
+
+            return $this->errorBack('Failed to delete company');
+        }
     }
 }

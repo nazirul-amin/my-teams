@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCompanyRequest extends FormRequest
 {
@@ -11,7 +12,10 @@ class UpdateCompanyRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        /** @var \App\Models\Company $company */
+        $company = $this->route('company');
+
+        return $this->user()?->can('update', $company) ?? false;
     }
 
     /**
@@ -21,8 +25,30 @@ class UpdateCompanyRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var \App\Models\Company $company */
+        $company = $this->route('company');
+
         return [
-            //
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('companies', 'slug')->ignore($company?->getKey(), 'id'),
+            ],
+            'website' => ['nullable', 'url'],
+            'linkedin' => ['nullable', 'url'],
+            'twitter' => ['nullable', 'url'],
+            'facebook' => ['nullable', 'url'],
+            'instagram' => ['nullable', 'url'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'state' => ['nullable', 'string', 'max:255'],
+            'country' => ['nullable', 'string', 'max:255'],
+            'user_ids' => ['array'],
+            'user_ids.*' => ['string'],
         ];
     }
 }

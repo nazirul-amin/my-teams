@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -14,7 +15,8 @@ return new class extends Migration
     {
         Schema::create('teams', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->foreignIdFor(User::class);
+            $table->foreignIdFor(User::class, 'created_by')->index();
+            $table->foreignIdFor(Company::class, 'company_id')->index();
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('photo')->nullable();

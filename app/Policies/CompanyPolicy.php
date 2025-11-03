@@ -2,9 +2,9 @@
 
 namespace App\Policies;
 
+use App\Enums\RolesEnum;
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class CompanyPolicy
 {
@@ -13,7 +13,12 @@ class CompanyPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        // Allow listing; controller will scope results by membership
+        return $user->hasAnyRole([
+            RolesEnum::ADMIN->value,
+            RolesEnum::MANAGER->value,
+            RolesEnum::USER->value,
+        ]);
     }
 
     /**
@@ -21,7 +26,8 @@ class CompanyPolicy
      */
     public function view(User $user, Company $company): bool
     {
-        return false;
+        // Any member can read
+        return $company->users()->where('user_id', $user->getKey())->exists();
     }
 
     /**
@@ -29,7 +35,10 @@ class CompanyPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        // Admin can create (Super Admin via Gate::before)
+        return $user->hasAnyRole([
+            RolesEnum::ADMIN->value,
+        ]);
     }
 
     /**
@@ -37,7 +46,11 @@ class CompanyPolicy
      */
     public function update(User $user, Company $company): bool
     {
-        return false;
+        // Admin can update companies where they are a member
+        return $user->hasAnyRole([
+            RolesEnum::ADMIN->value,
+        ])
+            && $company->users()->where('user_id', $user->getKey())->exists();
     }
 
     /**
@@ -45,7 +58,9 @@ class CompanyPolicy
      */
     public function delete(User $user, Company $company): bool
     {
-        return false;
+        // Admin can delete companies where they are a member
+        return $user->hasRole(RolesEnum::ADMIN->value)
+            && $company->users()->where('user_id', $user->getKey())->exists();
     }
 
     /**
@@ -53,7 +68,7 @@ class CompanyPolicy
      */
     public function restore(User $user, Company $company): bool
     {
-        return false;
+        return $this->delete($user, $company);
     }
 
     /**
@@ -61,6 +76,6 @@ class CompanyPolicy
      */
     public function forceDelete(User $user, Company $company): bool
     {
-        return false;
+        return $this->delete($user, $company);
     }
 }

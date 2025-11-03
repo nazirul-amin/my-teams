@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('companies', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->foreignIdFor(User::class);
+            $table->foreignIdFor(User::class, 'created_by')->index();
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('website')->nullable();
