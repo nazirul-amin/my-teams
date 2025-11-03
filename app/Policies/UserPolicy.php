@@ -30,9 +30,13 @@ class UserPolicy
         if ($user->id === $target->id) {
             return true;
         }
-        // Admin can view users they created
+        // Admin can view users they created OR users who share a company
         if ($user->hasRole(RolesEnum::ADMIN->value)) {
-            return $target->created_by === $user->id;
+            if ($target->created_by === $user->id) {
+                return true;
+            }
+
+            return $target->companies()->whereIn('companies.id', $user->companies()->pluck('companies.id'))->exists();
         }
 
         // Manager/User can view users who share BOTH company and team
@@ -66,9 +70,13 @@ class UserPolicy
         if ($user->id === $target->id) {
             return true;
         }
-        // Admin can update only users they created
+        // Admin can update users they created OR users who share a company
         if ($user->hasRole(RolesEnum::ADMIN->value)) {
-            return $target->created_by === $user->id;
+            if ($target->created_by === $user->id) {
+                return true;
+            }
+
+            return $target->companies()->whereIn('companies.id', $user->companies()->pluck('companies.id'))->exists();
         }
 
         return false;

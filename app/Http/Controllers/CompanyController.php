@@ -23,10 +23,13 @@ class CompanyController extends BaseController
 
         $query = Company::query()->with(['creator:id,name']);
 
-        // Super Admin: all; others: only membership
+        // Super Admin: all; others: companies they created OR where they are a member
         if (! $user->hasRole(RolesEnum::SUPERADMIN->value)) {
-            $query->whereHas('users', function ($q) use ($user) {
-                $q->where('user_id', $user->getKey());
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->getKey())
+                    ->orWhereHas('users', function ($m) use ($user) {
+                        $m->where('users.id', $user->getKey());
+                    });
             });
         }
 
@@ -56,7 +59,13 @@ class CompanyController extends BaseController
 
         $usersQuery = User::query();
         if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-            $usersQuery->where('created_by', $auth->getKey());
+            $adminCompanyIds = $auth->companies()->pluck('companies.id');
+            $usersQuery->where(function ($q) use ($auth, $adminCompanyIds) {
+                $q->where('created_by', $auth->getKey())
+                    ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
+                        $qc->whereIn('companies.id', $adminCompanyIds);
+                    });
+            });
         }
         $users = $usersQuery->orderBy('name')->get(['id', 'name', 'email']);
 
@@ -83,7 +92,13 @@ class CompanyController extends BaseController
 
             $assignable = User::query();
             if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-                $assignable->where('created_by', $auth->getKey());
+                $adminCompanyIds = $auth->companies()->pluck('companies.id');
+                $assignable->where(function ($q) use ($auth, $adminCompanyIds) {
+                    $q->where('created_by', $auth->getKey())
+                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
+                            $qc->whereIn('companies.id', $adminCompanyIds);
+                        });
+                });
             }
             $assignableIds = $assignable->whereIn('id', $ids)->pluck('id')->unique();
             $company->users()->syncWithoutDetaching($assignableIds->all());
@@ -120,7 +135,13 @@ class CompanyController extends BaseController
 
         $usersQuery = User::query();
         if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-            $usersQuery->where('created_by', $auth->getKey());
+            $adminCompanyIds = $auth->companies()->pluck('companies.id');
+            $usersQuery->where(function ($q) use ($auth, $adminCompanyIds) {
+                $q->where('created_by', $auth->getKey())
+                    ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
+                        $qc->whereIn('companies.id', $adminCompanyIds);
+                    });
+            });
         }
         $users = $usersQuery->orderBy('name')->get(['id', 'name', 'email']);
 
@@ -147,7 +168,13 @@ class CompanyController extends BaseController
 
             $assignable = User::query();
             if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-                $assignable->where('created_by', $auth->getKey());
+                $adminCompanyIds = $auth->companies()->pluck('companies.id');
+                $assignable->where(function ($q) use ($auth, $adminCompanyIds) {
+                    $q->where('created_by', $auth->getKey())
+                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
+                            $qc->whereIn('companies.id', $adminCompanyIds);
+                        });
+                });
             }
             $assignableIds = $assignable->whereIn('id', $ids)->pluck('id')->unique();
             $company->users()->sync($assignableIds->all());
@@ -194,10 +221,10 @@ class CompanyController extends BaseController
             $allowed = Company::query()
                 ->whereKey($company->getKey())
                 ->where(function ($q) use ($auth) {
-                    $q->whereHas('users', function ($m) use ($auth) {
-                        $m->where('user_id', $auth->getKey());
-                    })
-                        ->orWhere('created_by', $auth->getKey());
+                    $q->where('created_by', $auth->getKey())
+                        ->orWhereHas('users', function ($m) use ($auth) {
+                            $m->where('users.id', $auth->getKey());
+                        });
                 })
                 ->exists();
 

@@ -9,15 +9,16 @@ use App\Mail\TemporaryPasswordMail;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
-class UserController extends Controller
+class UserController extends BaseController
 {
     public function index()
     {
-        $this->authorize('viewAny', User::class);
+        Gate::authorize('viewAny', User::class);
 
         $auth = request()->user();
 
@@ -26,8 +27,14 @@ class UserController extends Controller
         if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
             // no filter
         } elseif ($auth->hasRole(RolesEnum::ADMIN->value)) {
-            // Admin: users they created
-            $query->where('created_by', $auth->getKey());
+            // Admin: users they created OR users in the same companies
+            $userCompanyIds = $auth->companies()->pluck('companies.id');
+            $query->where(function ($q) use ($auth, $userCompanyIds) {
+                $q->where('created_by', $auth->getKey())
+                    ->orWhereHas('companies', function ($qc) use ($userCompanyIds) {
+                        $qc->whereIn('companies.id', $userCompanyIds);
+                    });
+            });
         } else {
             // Manager/User: users who share BOTH company and team
             $userCompanyIds = $auth->companies()->pluck('companies.id');
@@ -46,7 +53,7 @@ class UserController extends Controller
             });
         }
 
-        $perPage = (int) request('per_page', 10);
+        $perPage = $this->perPage();
         $users = $query->orderBy('name')->paginate($perPage)->withQueryString();
 
         return Inertia::render('users/Index', [
@@ -60,14 +67,19 @@ class UserController extends Controller
 
     public function create()
     {
-        $this->authorize('create', User::class);
+        Gate::authorize('create', User::class);
 
         $auth = request()->user();
 
         $companiesQuery = Company::query();
         if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            // Admin can assign only companies they created
-            $companiesQuery->where('created_by', $auth->getKey());
+            // Admin can assign companies they created OR companies they are a member of
+            $companiesQuery->where(function ($q) use ($auth) {
+                $q->where('created_by', $auth->getKey())
+                    ->orWhereHas('users', function ($m) use ($auth) {
+                        $m->where('users.id', $auth->getKey());
+                    });
+            });
         }
         $companies = $companiesQuery->orderBy('name')->get(['id', 'name']);
 
@@ -99,54 +111,73 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
-        $auth = $request->user();
+        try {
+            Gate::authorize('create', User::class);
 
-        $data = $request->validated();
-        $companyIds = collect($data['company_ids'] ?? [])->filter();
+            $auth = $request->user();
+            $data = $request->validated();
+            $companyIds = collect($data['company_ids'] ?? [])->filter();
 
-        $user = new User;
-        $user->name = $data['name'];
-        $user->email = $data['email'];
-        // Generate temporary password
-        $tempPassword = Str::random(16);
-        $user->password = bcrypt($tempPassword);
-        $user->created_by = $auth->getKey();
-        $user->save();
+            $user = new User;
+            $user->name = $data['name'];
+            $user->email = $data['email'];
+            // Generate temporary password
+            $tempPassword = Str::random(16);
+            $user->password = bcrypt($tempPassword);
+            $user->created_by = $auth->getKey();
+            $user->save();
 
-        // Notify user via email with the temporary password
-        Mail::to($user->email)->send(new TemporaryPasswordMail($user, $tempPassword));
+            // Notify user via email with the temporary password
+            Mail::to($user->email)->send(new TemporaryPasswordMail($user, $tempPassword));
 
-        // Assign role (limit by assignable set)
-        $requestedRole = $data['role'] ?? RolesEnum::USER->value;
-        $assignableRoles = $auth->hasRole(RolesEnum::SUPERADMIN->value)
-            ? [RolesEnum::SUPERADMIN->value, RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value]
-            : [RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value];
-        if (! in_array($requestedRole, $assignableRoles, true)) {
-            $requestedRole = RolesEnum::USER->value;
+            // Assign role (limit by assignable set)
+            $requestedRole = $data['role'] ?? RolesEnum::USER->value;
+            $assignableRoles = $auth->hasRole(RolesEnum::SUPERADMIN->value)
+                ? [RolesEnum::SUPERADMIN->value, RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value]
+                : [RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value];
+            if (! in_array($requestedRole, $assignableRoles, true)) {
+                $requestedRole = RolesEnum::USER->value;
+            }
+            $user->syncRoles([$requestedRole]);
+
+            // Filter assignable companies for Admin: created by admin OR admin is a member
+            $assignable = Company::query();
+            if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
+                $assignable->where(function ($q) use ($auth) {
+                    $q->where('created_by', $auth->getKey())
+                        ->orWhereHas('users', function ($m) use ($auth) {
+                            $m->where('users.id', $auth->getKey());
+                        });
+                });
+            }
+            $assignableIds = $assignable->whereIn('id', $companyIds)->pluck('id');
+            $user->companies()->sync($assignableIds);
+
+            return $this->successRedirect('users.index', 'User created');
+        } catch (\Throwable $th) {
+            $this->logException($th, 'create user', [
+                'data' => $request->validated(),
+            ]);
+
+            return $this->errorBack('Failed to create user');
         }
-        $user->syncRoles([$requestedRole]);
-
-        // Filter assignable companies for Admin
-        $assignable = Company::query();
-        if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            $assignable->where('created_by', $auth->getKey());
-        }
-        $assignableIds = $assignable->whereIn('id', $companyIds)->pluck('id');
-
-        $user->companies()->sync($assignableIds);
-
-        return redirect()->route('users.index')->with('success', 'User created');
     }
 
     public function edit(User $user)
     {
-        $this->authorize('update', $user);
+        Gate::authorize('update', $user);
 
         $auth = request()->user();
 
         $companiesQuery = Company::query();
         if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            $companiesQuery->where('created_by', $auth->getKey());
+            // Admin can assign companies they created OR companies they are a member of
+            $companiesQuery->where(function ($q) use ($auth) {
+                $q->where('created_by', $auth->getKey())
+                    ->orWhereHas('users', function ($m) use ($auth) {
+                        $m->where('users.id', $auth->getKey());
+                    });
+            });
         }
         $companies = $companiesQuery->orderBy('name')->get(['id', 'name']);
 
@@ -188,44 +219,80 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        $data = $request->validated();
-        $auth = $request->user();
+        try {
+            Gate::authorize('update', $user);
 
-        $user->name = $data['name'];
-        $user->email = $data['email'];
-        if (! empty($data['password'])) {
-            $user->password = bcrypt($data['password']);
-        }
-        $user->save();
+            $data = $request->validated();
+            $auth = $request->user();
 
-        // Role assignment (optional)
-        if (! empty($data['role'])) {
-            $assignableRoles = $auth->hasRole(RolesEnum::SUPERADMIN->value)
-                ? [RolesEnum::SUPERADMIN->value, RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value]
-                : [RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value];
-            $role = in_array($data['role'], $assignableRoles, true) ? $data['role'] : null;
-            if ($role) {
-                $user->syncRoles([$role]);
+            $user->name = $data['name'];
+            $user->email = $data['email'];
+            if (! empty($data['password'])) {
+                $user->password = bcrypt($data['password']);
             }
-        }
+            $user->save();
 
-        // Company assignment
-        $companyIds = collect($data['company_ids'] ?? [])->filter();
-        $assignable = Company::query();
-        if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            $assignable->where('created_by', $auth->getKey());
-        }
-        $assignableIds = $assignable->whereIn('id', $companyIds)->pluck('id');
-        $user->companies()->sync($assignableIds);
+            // Role assignment (optional)
+            if (! empty($data['role'])) {
+                $assignableRoles = $auth->hasRole(RolesEnum::SUPERADMIN->value)
+                    ? [RolesEnum::SUPERADMIN->value, RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value]
+                    : [RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value];
+                $role = in_array($data['role'], $assignableRoles, true) ? $data['role'] : null;
+                if ($role) {
+                    $user->syncRoles([$role]);
+                }
+            }
 
-        return redirect()->route('users.index')->with('success', 'User updated');
+            // Company assignment: only process if there is an actual change
+            $companyIds = collect($data['company_ids'] ?? [])->filter();
+            $currentCompanyIds = $user->companies()->pluck('companies.id');
+            $isChanged = $currentCompanyIds->sort()->values()->toJson() !== $companyIds->sort()->values()->toJson();
+
+            if ($isChanged) {
+                $assignable = Company::query();
+                if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
+                    // Ensure Admin is eligible to assign this user: creator OR shares at least one company
+                    $adminCompanyIds = $auth->companies()->pluck('companies.id');
+                    $eligible = ($user->created_by === $auth->getKey())
+                        || $user->companies()->whereIn('companies.id', $adminCompanyIds)->exists();
+                    abort_unless($eligible, 403);
+
+                    // Admin can assign to companies they created OR companies they are a member of
+                    $assignable->where(function ($q) use ($auth) {
+                        $q->where('created_by', $auth->getKey())
+                            ->orWhereHas('users', function ($m) use ($auth) {
+                                $m->where('users.id', $auth->getKey());
+                            });
+                    });
+                }
+                $assignableIds = $assignable->whereIn('id', $companyIds)->pluck('id');
+                $user->companies()->sync($assignableIds);
+            }
+
+            return $this->successRedirect('users.index', 'User updated');
+        } catch (\Throwable $th) {
+            $this->logException($th, 'update user', [
+                'user_id' => $user->getKey(),
+                'data' => $request->validated(),
+            ]);
+
+            return $this->errorBack('Failed to update user');
+        }
     }
 
     public function destroy(User $user): RedirectResponse
     {
-        $this->authorize('delete', $user);
-        $user->delete();
+        try {
+            Gate::authorize('delete', $user);
+            $user->delete();
 
-        return redirect()->route('users.index')->with('success', 'User deleted');
+            return $this->successRedirect('users.index', 'User deleted');
+        } catch (\Throwable $th) {
+            $this->logException($th, 'delete user', [
+                'user_id' => $user->getKey(),
+            ]);
+
+            return $this->errorBack('Failed to delete user');
+        }
     }
 }

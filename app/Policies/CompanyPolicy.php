@@ -26,8 +26,9 @@ class CompanyPolicy
      */
     public function view(User $user, Company $company): bool
     {
-        // Any member can read
-        return $company->users()->where('user_id', $user->getKey())->exists();
+        // Creator or any member can read
+        return $company->created_by === $user->getKey()
+            || $company->users()->where('user_id', $user->getKey())->exists();
     }
 
     /**
@@ -46,11 +47,12 @@ class CompanyPolicy
      */
     public function update(User $user, Company $company): bool
     {
-        // Admin can update companies where they are a member
-        return $user->hasAnyRole([
-            RolesEnum::ADMIN->value,
-        ])
-            && $company->users()->where('user_id', $user->getKey())->exists();
+        // Admin can update companies they created OR where they are a member
+        return $user->hasRole(RolesEnum::ADMIN->value)
+            && (
+                $company->created_by === $user->getKey()
+                || $company->users()->where('user_id', $user->getKey())->exists()
+            );
     }
 
     /**
@@ -58,9 +60,12 @@ class CompanyPolicy
      */
     public function delete(User $user, Company $company): bool
     {
-        // Admin can delete companies where they are a member
+        // Admin can delete companies they created OR where they are a member
         return $user->hasRole(RolesEnum::ADMIN->value)
-            && $company->users()->where('user_id', $user->getKey())->exists();
+            && (
+                $company->created_by === $user->getKey()
+                || $company->users()->where('user_id', $user->getKey())->exists()
+            );
     }
 
     /**
