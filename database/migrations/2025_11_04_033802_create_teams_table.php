@@ -19,8 +19,7 @@ return new class extends Migration
             $table->foreignIdFor(Company::class, 'company_id')->index();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('photo')->nullable();
-            $table->string('cover_photo')->nullable();
+            $table->string('logo')->nullable();
             $table->timestamps();
         });
     }

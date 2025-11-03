@@ -21,8 +21,7 @@ const form = useForm({
   company_id: '',
   name: '',
   slug: '',
-  photo: '',
-  cover_photo: '',
+  logo: '',
   user_ids: [],
 })
 
@@ -88,14 +87,9 @@ watch(() => form.company_id, async (companyId) => {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field>
-            <FieldLabel for="photo">Photo URL</FieldLabel>
-            <UiInput id="photo" v-model="form.photo" />
-            <FieldError v-if="form.errors.photo">{{ form.errors.photo }}</FieldError>
-          </Field>
-          <Field>
-            <FieldLabel for="cover_photo">Cover Photo URL</FieldLabel>
-            <UiInput id="cover_photo" v-model="form.cover_photo" />
-            <FieldError v-if="form.errors.cover_photo">{{ form.errors.cover_photo }}</FieldError>
+            <FieldLabel for="logo">Logo URL</FieldLabel>
+            <UiInput id="logo" v-model="form.logo" />
+            <FieldError v-if="form.errors.logo">{{ form.errors.logo }}</FieldError>
           </Field>
         </div>
 

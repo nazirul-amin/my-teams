@@ -85,10 +85,12 @@ class CompanyController extends BaseController
             $data = $request->validated();
             $data['created_by'] = $request->user()->getKey();
 
-            // Handle cover photo upload
-            if ($request->hasFile('cover_photo')) {
-                $path = $request->file('cover_photo')->store('companies', 'public');
-                $data['cover_photo'] = Storage::url($path);
+            // Handle image uploads: logo, bg_light, bg_dark
+            foreach (['logo', 'bg_light', 'bg_dark'] as $imageField) {
+                if ($request->hasFile($imageField)) {
+                    $path = $request->file($imageField)->store('companies', 'public');
+                    $data[$imageField] = Storage::url($path);
+                }
             }
 
             $company = Company::create($data);
@@ -167,10 +169,12 @@ class CompanyController extends BaseController
         try {
             Gate::authorize('update', $company);
             $data = $request->validated();
-            // Handle cover photo upload
-            if ($request->hasFile('cover_photo')) {
-                $path = $request->file('cover_photo')->store('companies', 'public');
-                $data['cover_photo'] = Storage::url($path);
+            // Handle image uploads: logo, bg_light, bg_dark
+            foreach (['logo', 'bg_light', 'bg_dark'] as $imageField) {
+                if ($request->hasFile($imageField)) {
+                    $path = $request->file($imageField)->store('companies', 'public');
+                    $data[$imageField] = Storage::url($path);
+                }
             }
 
             $company->update($data);

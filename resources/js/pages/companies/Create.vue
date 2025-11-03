@@ -36,13 +36,16 @@ const form = useForm({
   city: '',
   state: '',
   country: '',
-  cover_photo: null,
+  bg_light: null,
+  bg_dark: null,
+  logo: null,
   user_ids: [],
 })
 
 function submit() {
   form.post('/companies', {
     preserveScroll: true,
+    forceFormData: true,
   })
 }
 
@@ -150,16 +153,42 @@ watch(() => form.name, (v) => {
           </div>
 
           <Field>
-            <FieldLabel for="cover_photo">Cover photo</FieldLabel>
+            <FieldLabel for="logo">Logo</FieldLabel>
             <input
-              id="cover_photo"
-              name="cover_photo"
+              id="logo"
+              name="logo"
               type="file"
               accept="image/*"
-              @change="(e) => (form.cover_photo = e.target?.files?.[0] ?? null)"
+              @change="(e) => (form.logo = e.target?.files?.[0] ?? null)"
               class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
             />
-            <FieldError v-if="form.errors.cover_photo">{{ form.errors.cover_photo }}</FieldError>
+            <FieldError v-if="form.errors.logo">{{ form.errors.logo }}</FieldError>
+          </Field>
+
+          <Field>
+            <FieldLabel for="bg_light">Background (Light)</FieldLabel>
+            <input
+              id="bg_light"
+              name="bg_light"
+              type="file"
+              accept="image/*"
+              @change="(e) => (form.bg_light = e.target?.files?.[0] ?? null)"
+              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+            />
+            <FieldError v-if="form.errors.bg_light">{{ form.errors.bg_light }}</FieldError>
+          </Field>
+
+          <Field>
+            <FieldLabel for="bg_dark">Background (Dark)</FieldLabel>
+            <input
+              id="bg_dark"
+              name="bg_dark"
+              type="file"
+              accept="image/*"
+              @change="(e) => (form.bg_dark = e.target?.files?.[0] ?? null)"
+              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+            />
+            <FieldError v-if="form.errors.bg_dark">{{ form.errors.bg_dark }}</FieldError>
           </Field>
 
           <Field>

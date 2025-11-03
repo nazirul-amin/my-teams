@@ -12,9 +12,9 @@ class ContactCardPublicController extends Controller
         $card = ContactCard::query()
             ->with([
                 'user:id,name,email',
-                'user.profile:id,user_id,bio,position,phone,website,linkedin,twitter,facebook,instagram,photo,cover_photo',
-                'company:id,name,address,city,state,country,website,phone,email,cover_photo',
-                'team:id,name',
+                'user.profile:id,user_id,bio,position,phone,website,linkedin,twitter,facebook,instagram,photo',
+                'company:id,name,address,city,state,country,website,phone,email,bg_light,bg_dark,logo',
+                'team:id,name,logo',
             ])
             ->where('slug', $slug)
             ->firstOrFail();

@@ -47,7 +47,9 @@ class UpdateCompanyRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
-            'cover_photo' => ['nullable', 'image', 'max:8192'],
+            'logo' => ['nullable', 'image', 'max:8192'],
+            'bg_light' => ['nullable', 'image', 'max:8192'],
+            'bg_dark' => ['nullable', 'image', 'max:8192'],
             'user_ids' => ['array'],
             'user_ids.*' => ['string'],
         ];

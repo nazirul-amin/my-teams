@@ -27,8 +27,7 @@ class StoreTeamRequest extends FormRequest
             'company_id' => ['required', 'exists:companies,id'],
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'unique:teams,slug'],
-            'photo' => ['nullable', 'string', 'max:2048'],
-            'cover_photo' => ['nullable', 'string', 'max:2048'],
+            'logo' => ['nullable', 'string', 'max:2048'],
             'user_ids' => ['array'],
             'user_ids.*' => ['distinct', 'exists:users,id'],
         ];

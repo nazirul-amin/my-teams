@@ -36,8 +36,7 @@ class UpdateTeamRequest extends FormRequest
                 'max:255',
                 Rule::unique('teams', 'slug')->ignore($team?->getKey()),
             ],
-            'photo' => ['nullable', 'string', 'max:2048'],
-            'cover_photo' => ['nullable', 'string', 'max:2048'],
+            'logo' => ['nullable', 'string', 'max:2048'],
             'user_ids' => ['sometimes', 'array'],
             'user_ids.*' => ['distinct', 'exists:users,id'],
         ];

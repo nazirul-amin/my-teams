@@ -29,8 +29,8 @@ return new class extends Migration
             $table->string('state')->nullable();
             $table->string('country')->nullable();
             $table->string('logo')->nullable();
-            $table->string('photo')->nullable();
-            $table->string('cover_photo')->nullable();
+            $table->string('bg_light')->nullable();
+            $table->string('bg_dark')->nullable();
             $table->timestamps();
         });
     }
