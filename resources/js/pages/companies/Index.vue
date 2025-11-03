@@ -26,13 +26,13 @@ const breadcrumbs = [
 const columns = [
   { accessorKey: 'name', header: 'Name', enableSorting: true, enableColumnFilter: true },
   { accessorKey: 'slug', header: 'Slug', enableSorting: true, enableColumnFilter: true },
+  { accessorKey: 'phone', header: 'Phone', enableSorting: true, enableColumnFilter: true },
   {
     id: 'creator_name',
     header: 'Created By',
     accessorFn: (row) => row?.creator?.name ?? '',
     enableSorting: false,
   },
-  { accessorKey: 'phone', header: 'Phone', enableSorting: true, enableColumnFilter: true },
   {
     id: 'actions',
     header: 'Actions',

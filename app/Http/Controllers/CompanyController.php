@@ -170,6 +170,7 @@ class CompanyController extends BaseController
     {
         try {
             Gate::authorize('delete', $company);
+            $company->users()->detach();
             $company->delete();
 
             return $this->successRedirect('companies.index', 'Company deleted');
@@ -180,5 +181,31 @@ class CompanyController extends BaseController
 
             return $this->errorBack('Failed to delete company');
         }
+    }
+
+    /**
+     * Return users assigned to a company that the current user can use for team assignment.
+     */
+    public function users(Company $company)
+    {
+        // Access check: user must be able to create/update teams for this company
+        $auth = request()->user();
+        if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
+            $allowed = Company::query()
+                ->whereKey($company->getKey())
+                ->where(function ($q) use ($auth) {
+                    $q->whereHas('users', function ($m) use ($auth) {
+                        $m->where('user_id', $auth->getKey());
+                    })
+                        ->orWhere('created_by', $auth->getKey());
+                })
+                ->exists();
+
+            abort_unless($allowed, 403);
+        }
+
+        $users = $company->users()->orderBy('name')->get(['users.id', 'users.name', 'users.email']);
+
+        return response()->json($users);
     }
 }

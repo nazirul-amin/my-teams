@@ -14,7 +14,7 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { BookOpen, Flag, LayoutGrid, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -26,7 +26,17 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Companies',
         href: '/companies',
-        icon: Folder,
+        icon: BookOpen,
+    },
+    {
+        title: 'Teams',
+        href: '/teams',
+        icon: Flag,
+    },
+    {
+        title: 'Users',
+        href: '/users',
+        icon: Users,
     },
 ];
 

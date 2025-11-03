@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 
 class StoreTeamRequest extends FormRequest
 {
@@ -11,7 +13,7 @@ class StoreTeamRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return Gate::allows('create', Team::class);
     }
 
     /**
@@ -22,7 +24,13 @@ class StoreTeamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'company_id' => ['required', 'exists:companies,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255', 'unique:teams,slug'],
+            'photo' => ['nullable', 'string', 'max:2048'],
+            'cover_photo' => ['nullable', 'string', 'max:2048'],
+            'user_ids' => ['array'],
+            'user_ids.*' => ['distinct', 'exists:users,id'],
         ];
     }
 }

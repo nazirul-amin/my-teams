@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\RolesEnum;
 use App\Models\Team;
 use App\Models\User;
 
@@ -12,7 +13,12 @@ class TeamPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->hasAnyRole([
+            RolesEnum::SUPERADMIN->value,
+            RolesEnum::ADMIN->value,
+            RolesEnum::MANAGER->value,
+            RolesEnum::USER->value,
+        ]);
     }
 
     /**
@@ -20,6 +26,23 @@ class TeamPolicy
      */
     public function view(User $user, Team $team): bool
     {
+        if ($user->hasRole(RolesEnum::SUPERADMIN->value)) {
+            return true;
+        }
+
+        // Admins/managers/users can view if assigned to the team company (membership)
+        if ($user->hasAnyRole([
+            RolesEnum::ADMIN->value,
+            RolesEnum::MANAGER->value,
+            RolesEnum::USER->value,
+        ])) {
+            return $team->company
+                ->users()
+                ->where('users.id', $user->getKey())
+                ->exists()
+                || $team->company->created_by === $user->getKey();
+        }
+
         return false;
     }
 
@@ -28,7 +51,10 @@ class TeamPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasAnyRole([
+            RolesEnum::SUPERADMIN->value,
+            RolesEnum::ADMIN->value,
+        ]);
     }
 
     /**
@@ -36,6 +62,19 @@ class TeamPolicy
      */
     public function update(User $user, Team $team): bool
     {
+        if ($user->hasRole(RolesEnum::SUPERADMIN->value)) {
+            return true;
+        }
+
+        if ($user->hasRole(RolesEnum::ADMIN->value)) {
+            // Admins can update if they own the company or are a member of the company
+            return $team->company->created_by === $user->getKey()
+                || $team->company
+                    ->users()
+                    ->where('users.id', $user->getKey())
+                    ->exists();
+        }
+
         return false;
     }
 
@@ -44,7 +83,7 @@ class TeamPolicy
      */
     public function delete(User $user, Team $team): bool
     {
-        return false;
+        return $this->update($user, $team);
     }
 
     /**
@@ -52,7 +91,7 @@ class TeamPolicy
      */
     public function restore(User $user, Team $team): bool
     {
-        return false;
+        return $this->update($user, $team);
     }
 
     /**
@@ -60,6 +99,6 @@ class TeamPolicy
      */
     public function forceDelete(User $user, Team $team): bool
     {
-        return false;
+        return $this->delete($user, $team);
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class UpdateTeamRequest extends FormRequest
 {
@@ -11,7 +13,9 @@ class UpdateTeamRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        $team = $this->route('team');
+
+        return $team ? Gate::allows('update', $team) : false;
     }
 
     /**
@@ -21,8 +25,21 @@ class UpdateTeamRequest extends FormRequest
      */
     public function rules(): array
     {
+        $team = $this->route('team');
+
         return [
-            //
+            'company_id' => ['sometimes', 'exists:companies,id'],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'slug' => [
+                'sometimes',
+                'string',
+                'max:255',
+                Rule::unique('teams', 'slug')->ignore($team?->getKey()),
+            ],
+            'photo' => ['nullable', 'string', 'max:2048'],
+            'cover_photo' => ['nullable', 'string', 'max:2048'],
+            'user_ids' => ['sometimes', 'array'],
+            'user_ids.*' => ['distinct', 'exists:users,id'],
         ];
     }
 }
