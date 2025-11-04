@@ -6,6 +6,7 @@ import UiInput from '@/components/ui/input/Input.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import MultiSelect from '@/components/MultiSelect.vue'
+import ImageUpload from '@/components/ImageUpload.vue'
 
 const props = defineProps({
   team: { type: Object, required: true },
@@ -121,41 +122,23 @@ watch(() => form.company_id, async (companyId) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field>
             <FieldLabel for="logo_light">Logo (Light Mode)</FieldLabel>
-            <input
-              id="logo_light"
-              name="logo_light"
-              type="file"
-              accept="image/*"
-              @change="onLogoLightChange"
-              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+            <ImageUpload
+              v-model="form.logo_light"
+              v-model:removed="form.remove_logo_light"
+              :initial-url="props.team?.logo_light || null"
+              :preview-class="'w-full h-24'"
             />
-            <div v-if="props.team?.logo_light && !form.remove_logo_light" class="mt-2">
-              <img :src="props.team.logo_light" alt="Current light logo" class="h-16 w-24 object-contain bg-white" />
-            </div>
-            <div v-else-if="form.remove_logo_light" class="mt-2 text-sm text-neutral-500">Light logo will be removed.</div>
-            <div class="mt-2">
-              <UiButton v-if="props.team?.logo_light && !form.remove_logo_light" type="button" variant="outline" size="sm" @click="() => { form.remove_logo_light = true; form.logo_light = null }">Remove current light logo</UiButton>
-            </div>
             <FieldError v-if="form.errors.logo_light">{{ form.errors.logo_light }}</FieldError>
           </Field>
 
           <Field>
             <FieldLabel for="logo_dark">Logo (Dark Mode)</FieldLabel>
-            <input
-              id="logo_dark"
-              name="logo_dark"
-              type="file"
-              accept="image/*"
-              @change="onLogoDarkChange"
-              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+            <ImageUpload
+              v-model="form.logo_dark"
+              v-model:removed="form.remove_logo_dark"
+              :initial-url="props.team?.logo_dark || null"
+              :preview-class="'w-full h-24'"
             />
-            <div v-if="props.team?.logo_dark && !form.remove_logo_dark" class="mt-2">
-              <img :src="props.team.logo_dark" alt="Current dark logo" class="h-16 w-24 object-contain bg-white" />
-            </div>
-            <div v-else-if="form.remove_logo_dark" class="mt-2 text-sm text-neutral-500">Dark logo will be removed.</div>
-            <div class="mt-2">
-              <UiButton v-if="props.team?.logo_dark && !form.remove_logo_dark" type="button" variant="outline" size="sm" @click="() => { form.remove_logo_dark = true; form.logo_dark = null }">Remove current dark logo</UiButton>
-            </div>
             <FieldError v-if="form.errors.logo_dark">{{ form.errors.logo_dark }}</FieldError>
           </Field>
         </div>

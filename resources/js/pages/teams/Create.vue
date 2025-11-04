@@ -6,6 +6,7 @@ import UiInput from '@/components/ui/input/Input.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import MultiSelect from '@/components/MultiSelect.vue'
+import ImageUpload from '@/components/ImageUpload.vue'
 
 const breadcrumbs = [
   { title: 'Teams', href: '/teams' },
@@ -94,32 +95,16 @@ watch(() => form.company_id, async (companyId) => {
         </Field>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field>
               <FieldLabel for="logo_light">Logo (Light Mode)</FieldLabel>
-              <input
-                id="logo_light"
-                name="logo_light"
-                type="file"
-                accept="image/*"
-                @change="(e) => (form.logo_light = e.target?.files?.[0] ?? null)"
-                class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
-              />
+              <ImageUpload v-model="form.logo_light" :preview-class="'w-full h-24'" />
               <FieldError v-if="form.errors.logo_light">{{ form.errors.logo_light }}</FieldError>
             </Field>
             <Field>
               <FieldLabel for="logo_dark">Logo (Dark Mode)</FieldLabel>
-              <input
-                id="logo_dark"
-                name="logo_dark"
-                type="file"
-                accept="image/*"
-                @change="(e) => (form.logo_dark = e.target?.files?.[0] ?? null)"
-                class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
-              />
+              <ImageUpload v-model="form.logo_dark" :preview-class="'w-full h-24'" />
               <FieldError v-if="form.errors.logo_dark">{{ form.errors.logo_dark }}</FieldError>
             </Field>
-          </div>
         </div>
 
         <Field>

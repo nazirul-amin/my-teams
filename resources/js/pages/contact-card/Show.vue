@@ -95,7 +95,8 @@ function saveVCard() {
         class="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
       <div class="absolute inset-0"></div>
-      <div class="relative mt-12 z-1 h-[160px] w-[160px]">
+      <div class="my-2"></div>
+      <div class="relative mt-8 z-1 h-[160px] w-[160px]">
         <div class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white">
           <div class="h-full w-full rounded-full bg-neutral-50" />
         </div>
@@ -103,17 +104,19 @@ function saveVCard() {
       </div>
 
       <!-- position and name -->
-      <h1 class="bg-linear-to-tr z-1 mt-2 from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl">
-        {{ props.user.name }}
-      </h1>
-      <p v-if="position" :class="['mt-2 z-1 text-sm md:text-base', textColorClass]">{{ position }}</p>
+      <div class="mt-2 space-y-2 z-1">
+        <h1 class="bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl">
+          {{ props.user.name }}
+        </h1>
+        <p v-if="position" :class="['text-sm md:text-base', textColorClass]">{{ position }}</p>
+      </div>
 
       <!-- phone and email -->
       <div class="mt-8 space-y-2 z-1">
         <a v-if="phoneText" :href="`tel:${phoneText}`" class="block text-xl font-semibold bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-transparent md:text-2xl">
           {{ phoneText }}
         </a>
-        <a v-if="emailText" :href="`mailto:${emailText}`" :class="['block', textColorClass]">{{ emailText }}</a>
+        <a v-if="emailText" :href="`mailto:${emailText}`" :class="['text-sm block', textColorClass]">{{ emailText }}</a>
       </div>
 
       <div class="mt-8 max-w-sm space-y-2 z-1">
@@ -130,7 +133,7 @@ function saveVCard() {
             alt="company logo"
             class="h-12 w-24 object-contain"
           />
-          <span class="-ml-7 text-xs" :class="textColorClass">{{ company.website }}</span>
+          <a v-if="company.website" :href="company.website" class="-ml-7 text-xs cursor-pointer" :class="textColorClass">{{ company.website }}</a>
         </div>
         <div class="flex-1 text-right">
           <img
@@ -139,7 +142,7 @@ function saveVCard() {
             alt="team logo"
             class="ml-auto h-12 w-24 object-contain"
           />
-          <span class="text-xs" :class="textColorClass">{{ team.website }}</span>
+          <a v-if="team.website" :href="team.website" class="text-xs cursor-pointer" :class="textColorClass">{{ team.website }}</a>
         </div>
       </div>
 
@@ -152,7 +155,7 @@ function saveVCard() {
         <a v-if="user.profile?.instagram" :href="user.profile.instagram" target="_blank" class="underline">Instagram</a>
       </div>
 
-      <div class="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-md px-6 pb-8">
+      <div class="fixed inset-x-0 bottom-6 z-10 mx-auto max-w-md px-6 pb-8">
         <button
           type="button"
           @click="saveVCard"
