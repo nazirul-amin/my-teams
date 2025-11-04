@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { Link, useForm, router } from '@inertiajs/vue3'
 import { ref, watch } from 'vue'
 import UiButton from '@/components/ui/button/Button.vue'
@@ -55,18 +55,6 @@ function submit() {
   })
 }
 
-function onLogoLightChange(e) {
-  const file = e.target?.files?.[0] ?? null
-  form.logo_light = file
-  if (file) form.remove_logo_light = true
-}
-
-function onLogoDarkChange(e) {
-  const file = e.target?.files?.[0] ?? null
-  form.logo_dark = file
-  if (file) form.remove_logo_dark = true
-}
-
 function destroyTeam() {
   if (confirm('Delete this team?')) {
     router.delete(`/teams/${props.team.id}`, { preserveScroll: true })
@@ -83,7 +71,7 @@ watch(() => form.company_id, async (companyId) => {
     if (res.ok) {
       assignableUsers.value = await res.json()
     }
-  } catch (_) {}
+  } catch {}
 })
 </script>
 

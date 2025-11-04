@@ -1,10 +1,10 @@
-<script setup>
+<script setup lang="ts">
 import { watch } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import UiButton from '@/components/ui/button/Button.vue'
 import UiInput from '@/components/ui/input/Input.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
-import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field'
+import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import MultiSelect from '@/components/MultiSelect.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 

@@ -1,9 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch, h } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue';
 import UiButton from '@/components/ui/button/Button.vue'
-import UiInput from '@/components/ui/input/Input.vue'
 import DataTable from '@/components/DataTable.vue'
 
 const props = defineProps({
@@ -66,7 +65,7 @@ function goto(params = {}) {
   }, { preserveState: true, preserveScroll: true, replace: true })
 }
 
-watch(search, (v) => {
+watch(search, () => {
   // debounce could be added; keep immediate for now
   pageIndex.value = 0
   goto()

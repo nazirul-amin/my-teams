@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { watch } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import UiButton from '@/components/ui/button/Button.vue'

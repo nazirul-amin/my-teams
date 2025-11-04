@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import UiButton from '@/components/ui/button/Button.vue'
@@ -57,7 +57,7 @@ watch(() => form.company_id, async (companyId) => {
     if (res.ok) {
       assignableUsers.value = await res.json()
     }
-  } catch (_) {}
+  } catch {}
 })
 </script>
 
