@@ -23,7 +23,11 @@ const form = useForm({
   company_id: props.team?.company_id ?? '',
   name: props.team?.name ?? '',
   slug: props.team?.slug ?? '',
-  logo: null,
+  website: props.team?.website ?? '',
+  logo_light: null,
+  logo_dark: null,
+  remove_logo_light: false,
+  remove_logo_dark: false,
   user_ids: [...(props.assigned_user_ids ?? [])],
 })
 
@@ -31,7 +35,16 @@ const assignableUsers = ref(props.users)
 
 function submit() {
   const originalTransform = form.transform
-  form.transform((data) => ({ ...data, _method: 'put' }))
+  form.transform((data) => {
+    const payload = { ...data, _method: 'put' }
+    // Prevent unintended deletion: do not send remove_logo if false
+    if (!payload.remove_logo_light) delete payload.remove_logo_light
+    if (!payload.remove_logo_dark) delete payload.remove_logo_dark
+    // Don't send logo when no new file selected
+    if (!payload.logo_light) delete payload.logo_light
+    if (!payload.logo_dark) delete payload.logo_dark
+    return payload
+  })
   form.post(`/teams/${props.team.id}`, {
     preserveScroll: true,
     forceFormData: true,
@@ -39,6 +52,18 @@ function submit() {
       form.transform = originalTransform
     },
   })
+}
+
+function onLogoLightChange(e) {
+  const file = e.target?.files?.[0] ?? null
+  form.logo_light = file
+  if (file) form.remove_logo_light = true
+}
+
+function onLogoDarkChange(e) {
+  const file = e.target?.files?.[0] ?? null
+  form.logo_dark = file
+  if (file) form.remove_logo_dark = true
 }
 
 function destroyTeam() {
@@ -87,21 +112,51 @@ watch(() => form.company_id, async (companyId) => {
           <FieldError v-if="form.errors.slug">{{ form.errors.slug }}</FieldError>
         </Field>
 
+        <Field>
+          <FieldLabel for="website">Website</FieldLabel>
+          <UiInput id="website" v-model="form.website" placeholder="https://example.com" />
+          <FieldError v-if="form.errors.website">{{ form.errors.website }}</FieldError>
+        </Field>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field>
-            <FieldLabel for="logo">Logo</FieldLabel>
+            <FieldLabel for="logo_light">Logo (Light Mode)</FieldLabel>
             <input
-              id="logo"
-              name="logo"
+              id="logo_light"
+              name="logo_light"
               type="file"
               accept="image/*"
-              @change="(e) => (form.logo = e.target?.files?.[0] ?? null)"
+              @change="onLogoLightChange"
               class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
             />
-            <div v-if="props.team?.logo" class="mt-2">
-              <img :src="props.team.logo" alt="Current team logo" class="h-16 w-16 rounded object-contain bg-white" />
+            <div v-if="props.team?.logo_light && !form.remove_logo_light" class="mt-2">
+              <img :src="props.team.logo_light" alt="Current light logo" class="h-16 w-24 object-contain bg-white" />
             </div>
-            <FieldError v-if="form.errors.logo">{{ form.errors.logo }}</FieldError>
+            <div v-else-if="form.remove_logo_light" class="mt-2 text-sm text-neutral-500">Light logo will be removed.</div>
+            <div class="mt-2">
+              <UiButton v-if="props.team?.logo_light && !form.remove_logo_light" type="button" variant="outline" size="sm" @click="() => { form.remove_logo_light = true; form.logo_light = null }">Remove current light logo</UiButton>
+            </div>
+            <FieldError v-if="form.errors.logo_light">{{ form.errors.logo_light }}</FieldError>
+          </Field>
+
+          <Field>
+            <FieldLabel for="logo_dark">Logo (Dark Mode)</FieldLabel>
+            <input
+              id="logo_dark"
+              name="logo_dark"
+              type="file"
+              accept="image/*"
+              @change="onLogoDarkChange"
+              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+            />
+            <div v-if="props.team?.logo_dark && !form.remove_logo_dark" class="mt-2">
+              <img :src="props.team.logo_dark" alt="Current dark logo" class="h-16 w-24 object-contain bg-white" />
+            </div>
+            <div v-else-if="form.remove_logo_dark" class="mt-2 text-sm text-neutral-500">Dark logo will be removed.</div>
+            <div class="mt-2">
+              <UiButton v-if="props.team?.logo_dark && !form.remove_logo_dark" type="button" variant="outline" size="sm" @click="() => { form.remove_logo_dark = true; form.logo_dark = null }">Remove current dark logo</UiButton>
+            </div>
+            <FieldError v-if="form.errors.logo_dark">{{ form.errors.logo_dark }}</FieldError>
           </Field>
         </div>
 

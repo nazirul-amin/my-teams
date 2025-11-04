@@ -13,8 +13,8 @@ class ContactCardPublicController extends Controller
             ->with([
                 'user:id,name,email',
                 'user.profile:id,user_id,bio,position,phone,website,linkedin,twitter,facebook,instagram,photo',
-                'company:id,name,address,city,state,country,website,phone,email,bg_light,bg_dark,logo',
-                'team:id,name,logo',
+                'company:id,name,address,city,state,country,website,phone,email,bg_light,bg_dark,logo_light,logo_dark',
+                'team:id,name,logo_light,logo_dark,website',
             ])
             ->where('slug', $slug)
             ->firstOrFail();
@@ -25,6 +25,7 @@ class ContactCardPublicController extends Controller
             'company' => $card->company,
             'team' => $card->team,
             'slug' => $card->slug,
+            'is_dark_mode' => (bool) $card->is_dark_mode,
         ]);
     }
 }

@@ -108,10 +108,12 @@ class TeamController extends BaseController
 
             $data['created_by'] = $auth->getKey();
 
-            // Handle logo upload
-            if ($request->hasFile('logo')) {
-                $path = $request->file('logo')->store('teams', 'public');
-                $data['logo'] = Storage::url($path);
+            // Handle logo uploads (no deletion needed on create)
+            foreach (['logo_light', 'logo_dark'] as $imageField) {
+                if ($request->hasFile($imageField)) {
+                    $path = $request->file($imageField)->store('teams', 'public');
+                    $data[$imageField] = Storage::url($path);
+                }
             }
 
             $team = Team::create($data);
@@ -204,10 +206,27 @@ class TeamController extends BaseController
                 }
             }
 
-            // Handle logo upload
-            if ($request->hasFile('logo')) {
-                $path = $request->file('logo')->store('teams', 'public');
-                $data['logo'] = Storage::url($path);
+            // Handle logo removal or replacement for logo_light, logo_dark
+            foreach (['logo_light', 'logo_dark'] as $imageField) {
+                $removeFlag = $request->boolean('remove_'.$imageField);
+                $hasNew = $request->hasFile($imageField);
+
+                if (($removeFlag || $hasNew) && $team->{$imageField}) {
+                    $publicPrefix = '/storage/';
+                    $relativePath = str_starts_with($team->{$imageField}, $publicPrefix)
+                        ? substr($team->{$imageField}, strlen($publicPrefix))
+                        : ltrim($team->{$imageField}, '/');
+                    Storage::disk('public')->delete($relativePath);
+                }
+
+                if ($removeFlag && ! $hasNew) {
+                    $data[$imageField] = null;
+                }
+
+                if ($hasNew) {
+                    $path = $request->file($imageField)->store('teams', 'public');
+                    $data[$imageField] = Storage::url($path);
+                }
             }
 
             $team->update($data);

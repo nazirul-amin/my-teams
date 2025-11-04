@@ -13,10 +13,12 @@ interface Company {
   phone?: string | null;
   email?: string | null;
   logo?: string | null;
+  logo_light?: string | null;
+  logo_dark?: string | null;
   bg_light?: string | null;
   bg_dark?: string | null;
 }
-interface Team { id: string | number; name: string; logo?: string | null }
+interface Team { id: string | number; name: string; logo?: string | null; website?: string | null }
 interface User { id: string | number; name: string; email: string; profile?: Profile | null }
 interface Profile {
   bio?: string | null;
@@ -35,6 +37,7 @@ interface Props {
   company: Company;
   team: Team;
   slug: string;
+  is_dark_mode: boolean;
 }
 
 const props = defineProps<Props>();
@@ -49,6 +52,11 @@ const companyAddress = computed(() => {
     .filter((p) => !!p && String(p).trim().length > 0);
   return parts.join(', ');
 });
+
+const selectedBg = computed(() => (props.is_dark_mode ? props.company?.bg_dark : props.company?.bg_light));
+const selectedCompanyLogo = computed(() => (props.is_dark_mode ? props.company?.logo_dark : props.company?.logo_light));
+const selectedTeamLogo = computed(() => (props.is_dark_mode ? (props.team as any)?.logo_dark : (props.team as any)?.logo_light));
+const textColorClass = computed(() => (props.is_dark_mode ? 'text-white' : 'text-black'));
 
 function saveVCard() {
   const lines: string[] = [];
@@ -81,57 +89,62 @@ function saveVCard() {
   <div class="relative min-h-screen">
     <div class="relative mx-auto flex max-w-md h-screen flex-col items-center px-6 pb-24 pt-10 text-center">
       <img
-        v-if="props.company?.bg_light"
-        :src="props.company.bg_light"
+        v-if="selectedBg"
+        :src="selectedBg as string"
         alt="cover"
         class="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
-      <div class="absolute inset-0 bg-white/60"></div>
-      <div class="relative mb-6 z-1 h-40 w-40">
-        <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-pink-400 via-orange-400 to-amber-400 p-[6px]">
+      <div class="absolute inset-0"></div>
+      <div class="relative mt-12 z-1 h-[160px] w-[160px]">
+        <div class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white">
           <div class="h-full w-full rounded-full bg-neutral-50" />
         </div>
         <img v-if="photo" :src="photo" alt="avatar" class="absolute inset-1.5 h-[148px] w-[148px] rounded-full object-cover" />
       </div>
 
-      <h1 class="bg-gradient-to-tr z-1 from-pink-500 via-orange-500 to-amber-500 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl">
+      <!-- position and name -->
+      <h1 class="bg-linear-to-tr z-1 mt-2 from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl">
         {{ props.user.name }}
       </h1>
-      <p v-if="position" class="mt-2 z-1 text-sm text-neutral-500 md:text-base">{{ position }}</p>
+      <p v-if="position" :class="['mt-2 z-1 text-sm md:text-base', textColorClass]">{{ position }}</p>
 
+      <!-- phone and email -->
       <div class="mt-8 space-y-2 z-1">
-        <a v-if="phoneText" :href="`tel:${phoneText}`" class="block text-xl font-semibold text-pink-500 md:text-2xl">
+        <a v-if="phoneText" :href="`tel:${phoneText}`" class="block text-xl font-semibold bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-transparent md:text-2xl">
           {{ phoneText }}
         </a>
-        <a v-if="emailText" :href="`mailto:${emailText}`" class="block text-neutral-600">{{ emailText }}</a>
+        <a v-if="emailText" :href="`mailto:${emailText}`" :class="['block', textColorClass]">{{ emailText }}</a>
       </div>
 
-      <div class="mt-10 max-w-sm space-y-2 z-1">
-        <p class="text-base font-semibold text-neutral-900">{{ company.name }}</p>
-        <p v-if="companyAddress" class="text-sm text-neutral-500">{{ companyAddress }}</p>
+      <div class="mt-8 max-w-sm space-y-2 z-1">
+        <p :class="['font-semibold', textColorClass]">{{ company.name }}</p>
+        <p v-if="companyAddress" :class="['text-xs', textColorClass]">{{ companyAddress }}</p>
       </div>
 
-      <div class="my-4 flex w-full max-w-sm items-center justify-between z-1">
+      <!-- company/team logo and website -->
+      <div class="mt-8 flex w-full max-w-sm items-center justify-between z-1">
         <div class="flex-1">
           <img
-            v-if="props.company?.logo"
-            :src="props.company.logo as string"
+            v-if="selectedCompanyLogo"
+            :src="selectedCompanyLogo as string"
             alt="company logo"
             class="h-12 w-24 object-contain"
           />
-          <span>{{ company.website }}</span>
+          <span class="-ml-7 text-xs" :class="textColorClass">{{ company.website }}</span>
         </div>
         <div class="flex-1 text-right">
           <img
-            v-if="props.team?.logo"
-            :src="props.team.logo as string"
+            v-if="selectedTeamLogo"
+            :src="selectedTeamLogo as string"
             alt="team logo"
             class="ml-auto h-12 w-24 object-contain"
           />
+          <span class="text-xs" :class="textColorClass">{{ team.website }}</span>
         </div>
       </div>
 
-      <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-neutral-600 z-1">
+      <!-- social media -->
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-4 text-sm z-1" :class="textColorClass">
         <a v-if="user.profile?.website" :href="user.profile.website" target="_blank" rel="noreferrer" class="underline">{{ user.profile.website }}</a>
         <a v-if="user.profile?.linkedin" :href="user.profile.linkedin" target="_blank" class="underline">LinkedIn</a>
         <a v-if="user.profile?.twitter" :href="user.profile.twitter" target="_blank" class="underline">Twitter</a>
@@ -143,7 +156,7 @@ function saveVCard() {
         <button
           type="button"
           @click="saveVCard"
-          class="w-full rounded-full bg-gradient-to-tr from-pink-500 via-orange-500 to-amber-500 px-6 py-4 text-center text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95"
+          class="w-full rounded-full bg-linear-to-tr from-[#ee5b71] to-[#f38456] px-6 py-4 text-center text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95 outline-1 outline-white"
         >
           Save Contact
         </button>

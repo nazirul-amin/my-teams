@@ -36,7 +36,11 @@ class UpdateTeamRequest extends FormRequest
                 'max:255',
                 Rule::unique('teams', 'slug')->ignore($team?->getKey()),
             ],
-            'logo' => ['nullable', 'image', 'max:8192'],
+            'website' => ['sometimes', 'nullable', 'string', 'max:255', 'url'],
+            'logo_light' => ['nullable', 'image', 'max:8192'],
+            'logo_dark' => ['nullable', 'image', 'max:8192'],
+            'remove_logo_light' => ['sometimes', 'boolean'],
+            'remove_logo_dark' => ['sometimes', 'boolean'],
             'user_ids' => ['sometimes', 'array'],
             'user_ids.*' => ['distinct', 'exists:users,id'],
         ];

@@ -21,7 +21,9 @@ const form = useForm({
   company_id: '',
   name: '',
   slug: '',
-  logo: null,
+  website: '',
+  logo_light: null,
+  logo_dark: null,
   user_ids: [],
 })
 
@@ -85,19 +87,39 @@ watch(() => form.company_id, async (companyId) => {
           <FieldError v-if="form.errors.slug">{{ form.errors.slug }}</FieldError>
         </Field>
 
+        <Field>
+          <FieldLabel for="website">Website</FieldLabel>
+          <UiInput id="website" v-model="form.website" placeholder="https://example.com" />
+          <FieldError v-if="form.errors.website">{{ form.errors.website }}</FieldError>
+        </Field>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field>
-            <FieldLabel for="logo">Logo</FieldLabel>
-            <input
-              id="logo"
-              name="logo"
-              type="file"
-              accept="image/*"
-              @change="(e) => (form.logo = e.target?.files?.[0] ?? null)"
-              class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
-            />
-            <FieldError v-if="form.errors.logo">{{ form.errors.logo }}</FieldError>
-          </Field>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel for="logo_light">Logo (Light Mode)</FieldLabel>
+              <input
+                id="logo_light"
+                name="logo_light"
+                type="file"
+                accept="image/*"
+                @change="(e) => (form.logo_light = e.target?.files?.[0] ?? null)"
+                class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+              />
+              <FieldError v-if="form.errors.logo_light">{{ form.errors.logo_light }}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel for="logo_dark">Logo (Dark Mode)</FieldLabel>
+              <input
+                id="logo_dark"
+                name="logo_dark"
+                type="file"
+                accept="image/*"
+                @change="(e) => (form.logo_dark = e.target?.files?.[0] ?? null)"
+                class="block w-full text-sm file:mr-4 file:rounded-md file:border-0 file:bg-neutral-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-neutral-700 hover:file:bg-neutral-200"
+              />
+              <FieldError v-if="form.errors.logo_dark">{{ form.errors.logo_dark }}</FieldError>
+            </Field>
+          </div>
         </div>
 
         <Field>

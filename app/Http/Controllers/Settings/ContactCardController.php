@@ -39,6 +39,7 @@ class ContactCardController extends BaseController
                 'slug' => $existing->slug,
                 'company_id' => $existing->company_id,
                 'team_id' => $existing->team_id,
+                'is_dark_mode' => (bool) $existing->is_dark_mode,
             ] : null,
         ]);
     }
@@ -69,6 +70,7 @@ class ContactCardController extends BaseController
                     'company_id' => $data['company_id'],
                     'team_id' => $data['team_id'],
                     'slug' => $data['slug'],
+                    'is_dark_mode' => $request->boolean('is_dark_mode'),
                 ]
             );
 

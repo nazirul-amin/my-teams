@@ -21,6 +21,7 @@ class ContactCardGenerateRequest extends FormRequest
                 'alpha_dash',
                 Rule::unique('contact_cards', 'slug')->ignore($existingId, 'id'),
             ],
+            'is_dark_mode' => ['sometimes', 'boolean'],
         ];
     }
 }

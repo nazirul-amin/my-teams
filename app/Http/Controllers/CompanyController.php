@@ -85,8 +85,8 @@ class CompanyController extends BaseController
             $data = $request->validated();
             $data['created_by'] = $request->user()->getKey();
 
-            // Handle image uploads: logo, bg_light, bg_dark
-            foreach (['logo', 'bg_light', 'bg_dark'] as $imageField) {
+            // Handle image uploads: logo_light, logo_dark, bg_light, bg_dark
+            foreach (['logo_light', 'logo_dark', 'bg_light', 'bg_dark'] as $imageField) {
                 if ($request->hasFile($imageField)) {
                     $path = $request->file($imageField)->store('companies', 'public');
                     $data[$imageField] = Storage::url($path);
@@ -169,9 +169,26 @@ class CompanyController extends BaseController
         try {
             Gate::authorize('update', $company);
             $data = $request->validated();
-            // Handle image uploads: logo, bg_light, bg_dark
-            foreach (['logo', 'bg_light', 'bg_dark'] as $imageField) {
-                if ($request->hasFile($imageField)) {
+            // Handle image removals/replacements: logo_light, logo_dark, bg_light, bg_dark
+            foreach (['logo_light', 'logo_dark', 'bg_light', 'bg_dark'] as $imageField) {
+                $removeFlag = $request->boolean('remove_'.$imageField);
+                $hasNewFile = $request->hasFile($imageField);
+
+                // delete existing file if removal requested or a new file is uploaded
+                if (($removeFlag || $hasNewFile) && $company->{$imageField}) {
+                    $publicPrefix = '/storage/';
+                    $relativePath = str_starts_with($company->{$imageField}, $publicPrefix)
+                        ? substr($company->{$imageField}, strlen($publicPrefix))
+                        : ltrim($company->{$imageField}, '/');
+                    Storage::disk('public')->delete($relativePath);
+                }
+
+                if ($removeFlag && ! $hasNewFile) {
+                    // Remove only
+                    $data[$imageField] = null;
+                }
+
+                if ($hasNewFile) {
                     $path = $request->file($imageField)->store('companies', 'public');
                     $data[$imageField] = Storage::url($path);
                 }

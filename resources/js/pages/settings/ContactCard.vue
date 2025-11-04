@@ -17,7 +17,7 @@ interface Team { id: string | number; name: string }
 interface Props {
   companies: Company[];
   teams: Team[];
-  contactCard?: { slug: string; company_id: string | number; team_id: string | number } | null;
+  contactCard?: { slug: string; company_id: string | number; team_id: string | number; is_dark_mode?: boolean } | null;
 }
 
 const props = defineProps<Props>();
@@ -53,6 +53,7 @@ const form = useForm({
   slug: slugInput.value,
   company_id: String(props.contactCard?.company_id ?? ''),
   team_id: String(props.contactCard?.team_id ?? ''),
+  is_dark_mode: Boolean(props.contactCard?.is_dark_mode ?? false),
 });
 
 watch(slugInput, (v) => (form.slug = v));
@@ -95,6 +96,11 @@ const publicUrl = computed(() => (props.contactCard?.slug ? `/c/${props.contactC
               <option v-for="t in props.teams" :key="t.id" :value="String(t.id)">{{ t.name }}</option>
             </select>
             <InputError class="mt-2" :message="form.errors.team_id" />
+          </div>
+
+          <div class="flex items-center gap-3">
+            <input id="is_dark_mode" name="is_dark_mode" type="checkbox" v-model="form.is_dark_mode" class="h-4 w-4" />
+            <Label for="is_dark_mode">Use dark background</Label>
           </div>
 
           <div class="flex items-center gap-4">
