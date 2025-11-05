@@ -60,6 +60,23 @@ watch(slugInput, (v) => (form.slug = v));
 const submit = () => form.post('/settings/contact-card');
 
 const publicUrl = computed(() => (props.contactCard?.slug ? `/c/${props.contactCard.slug}` : null));
+
+const absoluteShareUrl = computed(() => {
+  if (!publicUrl.value) return null;
+  if (typeof window === 'undefined') return publicUrl.value;
+  try {
+    const origin = window.location.origin;
+    return new URL(publicUrl.value, origin).toString();
+  } catch {
+    return publicUrl.value;
+  }
+});
+
+const qrImageUrl = computed(() => {
+  if (!absoluteShareUrl.value) return null;
+  const data = encodeURIComponent(absoluteShareUrl.value);
+  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=1&data=${data}`;
+});
 </script>
 
 <template>
@@ -109,6 +126,14 @@ const publicUrl = computed(() => (props.contactCard?.slug ? `/c/${props.contactC
             <div v-if="publicUrl" class="text-sm">
               Share link:
               <Link :href="publicUrl" class="underline">{{ publicUrl }}</Link>
+            </div>
+          </div>
+
+          <div v-if="qrImageUrl" class="flex items-center gap-6 pt-2">
+            <img :src="qrImageUrl as string" alt="Contact card QR" class="h-36 w-36 rounded border" />
+            <div class="flex flex-col gap-2">
+              <p class="text-sm text-neutral-600">Scan or download the QR code to share your contact card.</p>
+              <a :href="qrImageUrl as string" download="contact-card-qr.png" class="underline text-sm">Download QR</a>
             </div>
           </div>
         </form>

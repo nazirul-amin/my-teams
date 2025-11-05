@@ -47,8 +47,8 @@ const emailText = computed(() => props.user?.email ?? '');
 const photo = computed(() => props.user?.profile?.photo ?? '');
 const position = computed(() => props.user?.profile?.position ?? '');
 const website = computed(() => props.user?.profile?.website ?? '');
-const companyAddress = computed(() => {
-  const parts = [props.company.address, props.company.city, props.company.state, props.company.country]
+const companyAddressLine2 = computed(() => {
+  const parts = [props.company.city, props.company.state, props.company.country]
     .filter((p) => !!p && String(p).trim().length > 0);
   return parts.join(', ');
 });
@@ -121,7 +121,7 @@ function saveVCard() {
 
     <div class="mt-8 max-w-sm space-y-2 z-1">
       <p :class="['font-semibold', textColorClass]">{{ company.name }}</p>
-      <p v-if="companyAddress" :class="['text-xs break-all text-center', textColorClass]">{{ companyAddress }}</p>
+      <p v-if="company.address && companyAddressLine2" :class="['text-xs break-all text-center', textColorClass]">{{ company.address }}<br>{{ companyAddressLine2 }}</p>
     </div>
 
     <!-- company/team logo and website -->
