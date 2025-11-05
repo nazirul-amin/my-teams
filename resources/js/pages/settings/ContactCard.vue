@@ -86,7 +86,7 @@ const qrImageUrl = computed(() => {
     <SettingsLayout>
       <div class="flex flex-col space-y-6">
         <HeadingSmall
-          title="Public Contact Card"
+          title="Contact Card"
           description="Generate a public contact card that you can share"
         />
 
