@@ -97,9 +97,10 @@ function saveVCard() {
     <div class="my-2"></div>
     <div class="relative mt-8 z-1 shrink-0 h-32 w-32 sm:h-36 sm:w-36 md:h-40 md:w-40">
       <div class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white">
-        <div class="h-full w-full rounded-full bg-neutral-50" />
+        <div class="h-full w-full rounded-full bg-neutral-50 overflow-hidden">
+          <img v-if="photo" :src="photo" alt="avatar" class="h-full w-full object-cover" />
+        </div>
       </div>
-      <img v-if="photo" :src="photo" alt="avatar" class="absolute inset-1.5 rounded-full object-cover" />
     </div>
 
     <!-- position and name -->
