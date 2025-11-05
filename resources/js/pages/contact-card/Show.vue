@@ -86,84 +86,82 @@ function saveVCard() {
 <template>
   <Head :title="`${props.user.name} · Contact Card`" />
 
-  <div class="relative min-h-screen">
-    <div class="relative mx-auto flex max-w-md h-screen flex-col items-center px-6 pb-24 pt-10 text-center">
-      <img
-        v-if="selectedBg"
-        :src="selectedBg as string"
-        alt="cover"
-        class="pointer-events-none absolute inset-0 h-full w-full object-cover"
-      />
-      <div class="absolute inset-0"></div>
-      <div class="my-2"></div>
-      <div class="relative mt-8 z-1 h-[160px] w-[160px]">
-        <div class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white">
-          <div class="h-full w-full rounded-full bg-neutral-50" />
-        </div>
-        <img v-if="photo" :src="photo" alt="avatar" class="absolute inset-1.5 h-[148px] w-[148px] rounded-full object-cover" />
+  <div class="relative mx-auto flex max-w-md h-screen flex-col items-center px-6 pb-32 sm:pb-28 md:pb-24 pt-10 text-center">
+    <img
+      v-if="selectedBg"
+      :src="selectedBg as string"
+      alt="cover"
+      class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+    />
+    <div class="absolute inset-0"></div>
+    <div class="my-2"></div>
+    <div class="relative mt-8 z-1 shrink-0 h-32 w-32 sm:h-36 sm:w-36 md:h-40 md:w-40">
+      <div class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white">
+        <div class="h-full w-full rounded-full bg-neutral-50" />
       </div>
+      <img v-if="photo" :src="photo" alt="avatar" class="absolute inset-1.5 rounded-full object-cover" />
+    </div>
 
-      <!-- position and name -->
-      <div class="mt-2 space-y-2 z-1">
-        <h1 class="bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl">
-          {{ props.user.name }}
-        </h1>
-        <p v-if="position" :class="['text-sm md:text-base', textColorClass]">{{ position }}</p>
-      </div>
+    <!-- position and name -->
+    <div class="mt-2 space-y-2 z-1">
+      <h1 class="bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl">
+        {{ props.user.name }}
+      </h1>
+      <p v-if="position" :class="['text-sm md:text-base', textColorClass]">{{ position }}</p>
+    </div>
 
-      <!-- phone and email -->
-      <div class="mt-8 space-y-2 z-1">
-        <a v-if="phoneText" :href="`tel:${phoneText}`" class="block text-xl font-semibold bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-transparent md:text-2xl">
-          {{ phoneText }}
-        </a>
-        <a v-if="emailText" :href="`mailto:${emailText}`" :class="['text-sm block', textColorClass]">{{ emailText }}</a>
-      </div>
+    <!-- phone and email -->
+    <div class="mt-8 space-y-2 z-1">
+      <a v-if="phoneText" :href="`tel:${phoneText}`" class="block text-xl font-semibold bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-transparent md:text-2xl">
+        {{ phoneText }}
+      </a>
+      <a v-if="emailText" :href="`mailto:${emailText}`" :class="['text-sm block break-all', textColorClass]">{{ emailText }}</a>
+    </div>
 
-      <div class="mt-8 max-w-sm space-y-2 z-1">
-        <p :class="['font-semibold', textColorClass]">{{ company.name }}</p>
-        <p v-if="companyAddress" :class="['text-xs', textColorClass]">{{ companyAddress }}</p>
-      </div>
+    <div class="mt-8 max-w-sm space-y-2 z-1">
+      <p :class="['font-semibold', textColorClass]">{{ company.name }}</p>
+      <p v-if="companyAddress" :class="['text-xs break-all text-center', textColorClass]">{{ companyAddress }}</p>
+    </div>
 
-      <!-- company/team logo and website -->
-      <div class="mt-8 flex w-full max-w-sm items-center justify-between z-1">
-        <div class="flex-1">
-          <img
-            v-if="selectedCompanyLogo"
-            :src="selectedCompanyLogo as string"
-            alt="company logo"
-            class="h-12 w-24 object-contain"
-          />
-          <a v-if="company.website" :href="company.website" class="-ml-7 text-xs cursor-pointer" :class="textColorClass">{{ company.website }}</a>
-        </div>
-        <div class="flex-1 text-right">
-          <img
-            v-if="selectedTeamLogo"
-            :src="selectedTeamLogo as string"
-            alt="team logo"
-            class="ml-auto h-12 w-24 object-contain"
-          />
-          <a v-if="team.website" :href="team.website" class="text-xs cursor-pointer" :class="textColorClass">{{ team.website }}</a>
-        </div>
+    <!-- company/team logo and website -->
+    <div class="mt-8 flex w-full max-w-sm items-center justify-between z-1">
+      <div class="min-w-0 flex-1">
+        <img
+          v-if="selectedCompanyLogo"
+          :src="selectedCompanyLogo as string"
+          alt="company logo"
+          class="h-12 w-24 object-contain"
+        />
+        <a v-if="company.website" :href="company.website" class="-ml-7 text-xs cursor-pointer break-all block" :class="textColorClass">{{ company.website }}</a>
       </div>
+      <div class="min-w-0 flex-1 text-right">
+        <img
+          v-if="selectedTeamLogo"
+          :src="selectedTeamLogo as string"
+          alt="team logo"
+          class="ml-auto h-12 w-24 object-contain"
+        />
+        <a v-if="team.website" :href="team.website" class="text-xs cursor-pointer break-all block" :class="textColorClass">{{ team.website }}</a>
+      </div>
+    </div>
 
-      <!-- social media -->
-      <div class="mt-8 flex flex-wrap items-center justify-center gap-4 text-sm z-1" :class="textColorClass">
-        <a v-if="user.profile?.website" :href="user.profile.website" target="_blank" rel="noreferrer" class="underline">{{ user.profile.website }}</a>
-        <a v-if="user.profile?.linkedin" :href="user.profile.linkedin" target="_blank" class="underline">LinkedIn</a>
-        <a v-if="user.profile?.twitter" :href="user.profile.twitter" target="_blank" class="underline">Twitter</a>
-        <a v-if="user.profile?.facebook" :href="user.profile.facebook" target="_blank" class="underline">Facebook</a>
-        <a v-if="user.profile?.instagram" :href="user.profile.instagram" target="_blank" class="underline">Instagram</a>
-      </div>
+    <!-- social media -->
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-4 text-sm z-1" :class="textColorClass">
+      <a v-if="user.profile?.website" :href="user.profile.website" target="_blank" rel="noreferrer" class="underline">{{ user.profile.website }}</a>
+      <a v-if="user.profile?.linkedin" :href="user.profile.linkedin" target="_blank" class="underline">LinkedIn</a>
+      <a v-if="user.profile?.twitter" :href="user.profile.twitter" target="_blank" class="underline">Twitter</a>
+      <a v-if="user.profile?.facebook" :href="user.profile.facebook" target="_blank" class="underline">Facebook</a>
+      <a v-if="user.profile?.instagram" :href="user.profile.instagram" target="_blank" class="underline">Instagram</a>
+    </div>
 
-      <div class="fixed inset-x-0 bottom-6 z-10 mx-auto max-w-md px-6 pb-8">
-        <button
-          type="button"
-          @click="saveVCard"
-          class="w-full rounded-full bg-linear-to-tr from-[#ee5b71] to-[#f38456] px-6 py-4 text-center text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95 outline-1 outline-white"
-        >
-          Save Contact
-        </button>
-      </div>
+    <div class="w-full z-1 mx-auto max-w-md px-6 mt-2">
+      <button
+        type="button"
+        @click="saveVCard"
+        class="w-full rounded-full bg-linear-to-tr from-[#ee5b71] to-[#f38456] px-6 py-4 text-center text-base font-semibold text-white shadow-md transition-opacity hover:opacity-95 outline-1 outline-white"
+      >
+        Save Contact
+      </button>
     </div>
   </div>
 </template>
