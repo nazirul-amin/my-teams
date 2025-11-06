@@ -9,6 +9,7 @@ const props = defineProps<{
   previewClass?: string
   buttonText?: string
   removed?: boolean
+  name?: string
 }>()
 
 const emit = defineEmits<{
@@ -65,6 +66,7 @@ watch(() => props.modelValue, (f) => {
       ref="fileInput"
       type="file"
       :accept="accept ?? 'image/*'"
+      :name="name"
       class="hidden"
       :disabled="disabled"
       @change="onFileChange"

@@ -33,7 +33,7 @@ class ProfileUpdateRequest extends FormRequest
             'phone' => [
                 'required',
                 'string',
-                Rule::unique('profiles', 'phone')->ignore($profileId, 'id'),
+                'max:255',
             ],
             'website' => ['nullable', 'string', 'max:255'],
             'linkedin' => ['nullable', 'string', 'max:255'],

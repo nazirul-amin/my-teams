@@ -22,7 +22,7 @@ class UserController extends BaseController
 
         $auth = request()->user();
 
-        $query = User::query()->with('creator');
+        $query = User::query()->with('profile');
 
         if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
             // no filter

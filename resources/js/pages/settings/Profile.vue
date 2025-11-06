@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import { ref } from 'vue';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { type BreadcrumbItem } from '@/types';
+import ImageUpload from '@/components/ImageUpload.vue';
 
 interface Props {
     mustVerifyEmail: boolean;
@@ -31,6 +33,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
 
 const page = usePage();
 const user = page.props.auth.user;
+const photoFile = ref<File | null>(null);
 </script>
 
 <template>
@@ -51,11 +54,14 @@ const user = page.props.auth.user;
                 >
                     <div class="grid gap-2">
                         <Label for="photo">Profile photo</Label>
-                        <Input id="photo" name="photo" type="file" accept="image/*" />
+                        <ImageUpload
+                            v-model="photoFile"
+                            name="photo"
+                            :initial-url="props.profile?.photo ?? null"
+                            accept="image/*"
+                            :preview-class="'h-16 w-16 rounded-full object-cover border'"
+                        />
                         <InputError class="mt-2" :message="errors.photo" />
-                        <div v-if="props.profile?.photo" class="mt-2">
-                            <img :src="props.profile.photo" alt="Current photo" class="h-16 w-16 rounded-full object-cover" />
-                        </div>
                     </div>
                     <div class="grid gap-2">
                         <Label for="name">Name</Label>
@@ -106,7 +112,6 @@ const user = page.props.auth.user;
                             class="mt-1 block w-full"
                             :default-value="props.profile?.phone ?? ''"
                             placeholder="Phone number"
-                            required
                         />
                         <InputError class="mt-2" :message="errors.phone" />
                     </div>
