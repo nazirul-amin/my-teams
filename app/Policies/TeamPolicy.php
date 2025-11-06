@@ -75,6 +75,13 @@ class TeamPolicy
                     ->exists();
         }
 
+        if ($user->hasRole(RolesEnum::MANAGER->value)) {
+            // Managers can update teams they are assigned to
+            return $team->users()
+                ->where('users.id', $user->getKey())
+                ->exists();
+        }
+
         return false;
     }
 
@@ -83,7 +90,20 @@ class TeamPolicy
      */
     public function delete(User $user, Team $team): bool
     {
-        return $this->update($user, $team);
+        if ($user->hasRole(RolesEnum::SUPERADMIN->value)) {
+            return true;
+        }
+
+        if ($user->hasRole(RolesEnum::ADMIN->value)) {
+            // Admins can delete if they own the company or are a member of the company
+            return $team->company->created_by === $user->getKey()
+                || $team->company
+                    ->users()
+                    ->where('users.id', $user->getKey())
+                    ->exists();
+        }
+
+        return false;
     }
 
     /**
@@ -91,7 +111,7 @@ class TeamPolicy
      */
     public function restore(User $user, Team $team): bool
     {
-        return $this->update($user, $team);
+        return $this->delete($user, $team);
     }
 
     /**

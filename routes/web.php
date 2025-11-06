@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     Route::get('companies/{company}/users', [CompanyController::class, 'users'])->name('companies.users');
     Route::resource('teams', TeamController::class);
     Route::resource('users', UserController::class)->except(['show']);
+    Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
 });
 
 require __DIR__.'/settings.php';

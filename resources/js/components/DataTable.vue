@@ -183,7 +183,6 @@ const pageSizesTyped = computed<number[]>(() => (props.pageSizes as number[]))
             <th v-for="column in table.getVisibleLeafColumns()" :key="String(column.id)" class="border-b px-3 py-2 text-left">
               <div v-if="column.getCanFilter()">
                 <UiInput
-                  :placeholder="`Filter ${String(column.columnDef.header ?? '')}`"
                   :model-value="String(column.getFilterValue() ?? '')"
                   @update:model-value="(v) => column.setFilterValue(v)"
                 />

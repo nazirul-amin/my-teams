@@ -129,7 +129,7 @@ class CompanyController extends BaseController
     {
         Gate::authorize('view', $company);
 
-        return Inertia::render('companies/Edit', [
+        return Inertia::render('companies/Show', [
             'company' => $company,
         ]);
     }

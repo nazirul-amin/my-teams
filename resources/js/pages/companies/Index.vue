@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, h } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { ref, watch, h, computed } from 'vue'
+import { Head, Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue';
 import UiButton from '@/components/ui/button/Button.vue'
 import DataTable from '@/components/DataTable.vue'
+import { is } from 'laravel-permission-to-vuejs'
 
 const props = defineProps({
   companies: { type: Object, required: true }, // Laravel paginator
@@ -13,6 +14,7 @@ const props = defineProps({
 const search = ref(props.filters.search || '')
 const perPage = ref(Number(props.filters.per_page || 10))
 const pageIndex = ref(Number((props.companies?.current_page ?? 1) - 1))
+const canManage = computed(() => Boolean(is('admin') || is('super-admin')))
 
 const breadcrumbs = [
     {
@@ -23,35 +25,45 @@ const breadcrumbs = [
 
 // TanStack Table columns
 const columns = [
-  { accessorKey: 'name', header: 'Name', enableSorting: true, enableColumnFilter: true },
-  { accessorKey: 'slug', header: 'Slug', enableSorting: true, enableColumnFilter: true },
-  { accessorKey: 'phone', header: 'Phone', enableSorting: true, enableColumnFilter: true },
+  { accessorKey: 'name', header: () => 'Name', enableSorting: true, enableColumnFilter: true },
+  { accessorKey: 'slug', header: () => 'Slug', enableSorting: true, enableColumnFilter: true },
+  { accessorKey: 'phone', header: () => 'Phone', enableSorting: true, enableColumnFilter: true },
   {
     id: 'creator_name',
-    header: 'Created By',
+    header: () => 'Created By',
     accessorFn: (row) => row?.creator?.name ?? '',
     enableSorting: false,
   },
   {
     id: 'actions',
-    header: 'Actions',
+    header: () => 'Actions',
     cell: ({ row }) => {
       const company = row.original
-      return h('div', { class: 'flex gap-2' }, [
-        h(Link, { href: `/companies/${company.id}/edit`, onClick: (e) => e.stopPropagation() }, {
-          default: () => h(UiButton, { size: 'sm', variant: 'outline' }, { default: () => 'Edit' })
-        }),
-        h(UiButton, {
-          size: 'sm',
-          variant: 'destructive',
-          onClick: (e) => {
-            e.stopPropagation()
-            if (confirm('Delete this company?')) {
-              router.delete(`/companies/${company.id}`, { preserveScroll: true })
+      const children: any[] = []
+      if (is('admin | super-admin')) {
+        children.push(
+          h(Link, { href: `/companies/${company.id}/edit`, onClick: (e) => e.stopPropagation() }, {
+            default: () => h(UiButton, { size: 'sm', variant: 'outline' }, { default: () => 'Edit' })
+          }),
+          h(UiButton, {
+            size: 'sm',
+            variant: 'destructive',
+            onClick: (e) => {
+              e.stopPropagation()
+              if (confirm('Delete this company?')) {
+                router.delete(`/companies/${company.id}`, { preserveScroll: true })
+              }
             }
-          }
-        }, { default: () => 'Delete' })
-      ])
+          }, { default: () => 'Delete' })
+        )
+      } else {
+        children.push(
+          h(Link, { href: `/companies/${company.id}`, onClick: (e) => e.stopPropagation() }, {
+            default: () => h(UiButton, { size: 'sm', variant: 'secondary' }, { default: () => 'Show' })
+          }),
+        )
+      }
+      return h('div', { class: 'flex gap-2' }, children)
     },
   },
 ]
@@ -84,7 +96,7 @@ watch(perPage, () => {
       <div class="p-6">
         <div class="mb-6 flex items-center gap-3">
           <div class="ml-auto flex items-center gap-2">
-            <Link href="/companies/create">
+            <Link v-if="canManage" href="/companies/create">
               <UiButton>Create</UiButton>
             </Link>
           </div>

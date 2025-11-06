@@ -145,7 +145,7 @@ class TeamController extends BaseController
     {
         Gate::authorize('view', $team);
 
-        return Inertia::render('teams/Edit', [
+        return Inertia::render('teams/Show', [
             'team' => $team->load('company:id,name'),
         ]);
     }

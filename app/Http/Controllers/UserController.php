@@ -65,6 +65,19 @@ class UserController extends BaseController
         ]);
     }
 
+    public function show(User $user)
+    {
+        Gate::authorize('view', $user);
+
+        return Inertia::render('users/Show', [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+        ]);
+    }
+
     public function create()
     {
         Gate::authorize('create', User::class);

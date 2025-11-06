@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, h } from 'vue'
+import { ref, watch, h, computed } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import UiButton from '@/components/ui/button/Button.vue'
 import DataTable from '@/components/DataTable.vue'
+import { is } from 'laravel-permission-to-vuejs'
 
 const props = defineProps({
   teams: { type: Object, required: true }, // Laravel paginator
@@ -18,36 +19,54 @@ const breadcrumbs = [
   { title: 'Teams', href: '/teams' },
 ]
 
+const canManage = computed(() => Boolean(is('admin') || is('super-admin')))
+
 // TanStack Table columns
 const columns = [
-  { accessorKey: 'name', header: 'Name', enableSorting: true, enableColumnFilter: true },
-  { accessorKey: 'slug', header: 'Slug', enableSorting: true, enableColumnFilter: true },
+  { accessorKey: 'name', header: () => 'Name', enableSorting: true, enableColumnFilter: true },
+  { accessorKey: 'slug', header: () => 'Slug', enableSorting: true, enableColumnFilter: true },
   {
     id: 'company_name',
-    header: 'Company',
+    header: () => 'Company',
     accessorFn: (row) => row?.company?.name ?? '',
     enableSorting: false,
   },
   {
     id: 'actions',
-    header: 'Actions',
+    header: () => 'Actions',
     cell: ({ row }) => {
       const team = row.original
-      return h('div', { class: 'flex gap-2' }, [
-        h(Link, { href: `/teams/${team.id}/edit`, onClick: (e) => e.stopPropagation() }, {
-          default: () => h(UiButton, { size: 'sm', variant: 'outline' }, { default: () => 'Edit' })
-        }),
-        h(UiButton, {
-          size: 'sm',
-          variant: 'destructive',
-          onClick: (e) => {
-            e.stopPropagation()
-            if (confirm('Delete this team?')) {
-              router.delete(`/teams/${team.id}`, { preserveScroll: true })
+      const children: any[] = []
+      if (is('admin | super-admin')) {
+        children.push(
+          h(Link, { href: `/teams/${team.id}/edit`, onClick: (e) => e.stopPropagation() }, {
+            default: () => h(UiButton, { size: 'sm', variant: 'outline' }, { default: () => 'Edit' })
+          }),
+          h(UiButton, {
+            size: 'sm',
+            variant: 'destructive',
+            onClick: (e) => {
+              e.stopPropagation()
+              if (confirm('Delete this team?')) {
+                router.delete(`/teams/${team.id}`, { preserveScroll: true })
+              }
             }
-          }
-        }, { default: () => 'Delete' })
-      ])
+          }, { default: () => 'Delete' })
+        )
+      } else if (is('manager')) {
+        children.push(
+          h(Link, { href: `/teams/${team.id}/edit`, onClick: (e) => e.stopPropagation() }, {
+            default: () => h(UiButton, { size: 'sm', variant: 'outline' }, { default: () => 'Edit' })
+          }),
+        )
+      } else {
+        children.push(
+          h(Link, { href: `/teams/${team.id}`, onClick: (e) => e.stopPropagation() }, {
+            default: () => h(UiButton, { size: 'sm', variant: 'secondary' }, { default: () => 'Show' })
+          }),
+        )
+      }
+      return h('div', { class: 'flex gap-2' }, children)
     },
   },
 ]
@@ -79,7 +98,7 @@ watch(perPage, () => {
     <div class="p-6">
       <div class="mb-6 flex items-center gap-3">
         <div class="ml-auto flex items-center gap-2">
-          <Link href="/teams/create">
+          <Link v-if="canManage" href="/teams/create">
             <UiButton>Create</UiButton>
           </Link>
         </div>
