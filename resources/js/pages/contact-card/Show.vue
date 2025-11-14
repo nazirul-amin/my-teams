@@ -140,7 +140,7 @@ async function saveVCard() {
     <Head :title="`${props.user.name} · Contact Card`" />
 
     <div
-        class="relative mx-auto flex h-screen max-w-md flex-col items-center px-6 pt-10 pb-32 text-center sm:pb-28 md:pb-24"
+        class="relative mx-auto flex min-h-screen max-w-md flex-col items-center px-4 pt-10 pb-32 text-center sm:px-6 sm:pb-28 md:pb-24"
     >
         <img
             v-if="selectedBg"
@@ -212,29 +212,31 @@ async function saveVCard() {
         </div>
 
         <!-- company/team logo and website -->
-        <div class="z-1 mt-8 flex w-full max-w-sm items-center justify-between">
-            <div class="min-w-0 flex-1">
+        <div
+            class="z-1 mt-8 flex w-full max-w-sm items-center justify-between gap-4 px-4"
+        >
+            <div class="min-w-0">
                 <img
                     v-if="selectedCompanyLogo"
                     :src="selectedCompanyLogo"
                     alt="company logo"
-                    class="ml-4 h-12 w-24 object-contain"
+                    class="h-12 w-24 max-w-full object-contain"
                 />
                 <a
                     v-if="company.website"
                     :href="company.website"
                     target="_blank"
-                    class="-ml-8 block cursor-pointer text-xs break-all"
+                    class="block cursor-pointer text-xs break-all"
                     :class="textColorClass"
                     >{{ company.website }}</a
                 >
             </div>
-            <div class="min-w-0 flex-1 text-right">
+            <div class="min-w-0 text-right">
                 <img
                     v-if="selectedTeamLogo"
                     :src="selectedTeamLogo"
                     alt="team logo"
-                    class="ml-auto h-12 w-24 object-contain"
+                    class="ml-auto h-12 w-24 max-w-full object-contain"
                 />
                 <a
                     v-if="team.website"
