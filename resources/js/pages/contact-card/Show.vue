@@ -152,11 +152,11 @@ async function saveVCard() {
 
         <!-- centered contact card content -->
         <div
-            class="relative mx-auto flex max-w-md flex-col items-center px-4 pt-4 pb-4 text-center sm:px-6 sm:pt-8 sm:pb-12"
+            class="relative mx-auto flex max-w-md flex-col items-center px-4 pt-6 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-20"
         >
             <div class="my-2"></div>
             <div
-                class="relative z-1 mt-6 h-32 w-32 shrink-0 sm:mt-8 sm:h-38 sm:w-38 md:h-42 md:w-42"
+                class="relative z-1 mt-8 h-38 w-38 shrink-0 sm:h-42 sm:w-42 md:h-46 md:w-46"
             >
                 <div
                     class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white"
@@ -175,9 +175,9 @@ async function saveVCard() {
             </div>
 
             <!-- position and name -->
-            <div class="z-1 mt-6 space-y-2 sm:mt-8">
+            <div class="z-1 mt-8 space-y-2">
                 <h1
-                    class="bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-2xl font-extrabold tracking-tight text-transparent sm:text-3xl md:text-4xl"
+                    class="bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl"
                 >
                     {{ props.user.name }}
                 </h1>
@@ -190,11 +190,11 @@ async function saveVCard() {
             </div>
 
             <!-- phone and email -->
-            <div class="z-1 mt-6 space-y-2 sm:mt-8">
+            <div class="z-1 mt-8 space-y-2">
                 <a
                     v-if="phoneText"
                     :href="`tel:${phoneText}`"
-                    class="block bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-lg font-semibold text-transparent sm:text-xl md:text-2xl"
+                    class="block bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-xl font-semibold text-transparent md:text-2xl"
                 >
                     {{ phoneDisplay }}
                 </a>
@@ -206,7 +206,7 @@ async function saveVCard() {
                 >
             </div>
 
-            <div class="z-1 mt-6 max-w-sm space-y-2 sm:mt-8">
+            <div class="z-1 mt-8 max-w-sm space-y-2">
                 <p :class="['font-semibold', textColorClass]">
                     {{ company.name }}
                 </p>
@@ -220,14 +220,14 @@ async function saveVCard() {
 
             <!-- company/team logo and website -->
             <div
-                class="z-1 mt-6 flex w-full max-w-sm items-center justify-between gap-4 px-4 sm:mt-8"
+                class="z-1 mt-8 flex w-full max-w-sm items-center justify-between gap-4 px-4"
             >
                 <div class="min-w-0">
                     <img
                         v-if="selectedCompanyLogo"
                         :src="selectedCompanyLogo"
                         alt="company logo"
-                        class="h-10 w-20 max-w-full object-contain sm:h-12 sm:w-24"
+                        class="h-12 w-24 max-w-full object-contain"
                     />
                     <a
                         v-if="company.website"
@@ -258,7 +258,7 @@ async function saveVCard() {
 
             <!-- social media -->
             <div
-                class="z-1 mt-6 flex flex-wrap items-center justify-center gap-2 text-sm sm:mt-8 sm:gap-3"
+                class="z-1 mt-8 flex flex-wrap items-center justify-center gap-3 text-sm"
                 :class="textColorClass"
             >
                 <a
@@ -309,11 +309,11 @@ async function saveVCard() {
                 </a>
             </div>
 
-            <div class="z-1 mx-auto mt-6 w-full max-w-md px-6 sm:mt-8">
+            <div class="z-1 mx-auto mt-8 w-full max-w-md px-6">
                 <button
                     type="button"
                     @click="saveVCard"
-                    class="w-full rounded-full bg-linear-to-tr from-[#ee5b71] to-[#f38456] px-5 py-3 text-center text-base font-semibold text-white shadow-md outline-1 outline-white transition-opacity hover:opacity-95 sm:px-6 sm:py-4"
+                    class="w-full rounded-full bg-linear-to-tr from-[#ee5b71] to-[#f38456] px-6 py-4 text-center text-base font-semibold text-white shadow-md outline-1 outline-white transition-opacity hover:opacity-95"
                 >
                     Save Contact
                 </button>
