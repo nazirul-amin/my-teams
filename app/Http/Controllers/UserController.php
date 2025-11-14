@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\RolesEnum;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Mail\TemporaryPasswordMail;
+use App\Mail\UserCreated;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -141,7 +141,7 @@ class UserController extends BaseController
             $user->save();
 
             // Notify user via email with the temporary password
-            Mail::to($user->email)->send(new TemporaryPasswordMail($user, $tempPassword));
+            Mail::to($user->email)->send(new UserCreated($user, $tempPassword));
 
             // Assign role (limit by assignable set)
             $requestedRole = $data['role'] ?? RolesEnum::USER->value;

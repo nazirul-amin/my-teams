@@ -31,8 +31,10 @@ class UserCreated extends Mailable
      */
     public function envelope(): Envelope
     {
+        $appName = config('app.name');
+
         return new Envelope(
-            subject: 'User Created',
+            subject: "Welcome to {$appName}",
         );
     }
 
@@ -44,6 +46,7 @@ class UserCreated extends Mailable
         return new Content(
             view: 'mail.user-created',
             with: [
+                'appName' => config('app.name'),
                 'user' => $this->user,
                 'tempPassword' => $this->tempPassword,
             ],
