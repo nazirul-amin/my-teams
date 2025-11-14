@@ -97,7 +97,7 @@ const textColorClass = computed(() =>
     props.is_dark_mode ? 'text-white' : 'text-black',
 );
 
-function saveVCard() {
+async function saveVCard() {
     const lines: string[] = [];
     lines.push('BEGIN:VCARD');
     lines.push('VERSION:3.0');
@@ -110,9 +110,21 @@ function saveVCard() {
     if (website.value) lines.push(`URL:${website.value}`);
     lines.push('END:VCARD');
 
-    const blob = new Blob([lines.join('\n')], {
-        type: 'text/vcard;charset=utf-8',
+    const blob = new Blob([lines.join('\n')], { type: 'text/x-vcard' });
+    const file = new File([blob], `${props.slug || 'contact'}.vcf`, {
+        type: blob.type,
     });
+
+    try {
+        if ((navigator as any).canShare?.({ files: [file] })) {
+            await (navigator as any).share({
+                files: [file],
+                title: `${props.user.name} contact`,
+            });
+            return;
+        }
+    } catch {}
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -139,7 +151,7 @@ function saveVCard() {
         <div class="absolute inset-0"></div>
         <div class="my-2"></div>
         <div
-            class="relative z-1 mt-2 h-38 w-38 shrink-0 sm:h-42 sm:w-42 md:h-46 md:w-46"
+            class="relative z-1 mt-6 h-38 w-38 shrink-0 sm:h-42 sm:w-42 md:h-46 md:w-46"
         >
             <div
                 class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white"
@@ -278,7 +290,7 @@ function saveVCard() {
             >
         </div>
 
-        <div class="z-1 mx-auto mt-6 w-full max-w-md px-6">
+        <div class="z-1 mx-auto mt-4 w-full max-w-md px-6">
             <button
                 type="button"
                 @click="saveVCard"
