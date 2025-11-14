@@ -140,8 +140,8 @@ async function saveVCard() {
 <template>
     <Head :title="`${props.user.name} · Contact Card`" />
 
-    <!-- full-screen background using selectedBg -->
-    <div class="relative min-h-screen w-full">
+    <!-- background sized to content height using selectedBg -->
+    <div class="relative w-full">
         <img
             v-if="selectedBg"
             :src="selectedBg"
@@ -152,7 +152,7 @@ async function saveVCard() {
 
         <!-- centered contact card content -->
         <div
-            class="relative mx-auto flex h-full max-w-md flex-col items-center px-4 pt-6 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-20"
+            class="relative mx-auto flex max-w-md flex-col items-center px-4 pt-6 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-20"
         >
             <div class="my-2"></div>
             <div
@@ -309,7 +309,7 @@ async function saveVCard() {
                 </a>
             </div>
 
-            <div class="z-1 mx-auto mt-auto w-full max-w-md px-6">
+            <div class="z-1 mx-auto mt-8 w-full max-w-md px-6">
                 <button
                     type="button"
                     @click="saveVCard"
