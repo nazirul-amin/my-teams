@@ -139,7 +139,7 @@ function saveVCard() {
         <div class="absolute inset-0"></div>
         <div class="my-2"></div>
         <div
-            class="relative z-1 mt-14 h-32 w-32 shrink-0 sm:h-36 sm:w-36 md:h-40 md:w-40"
+            class="relative z-1 mt-8 h-38 w-38 shrink-0 sm:h-42 sm:w-42 md:h-46 md:w-46"
         >
             <div
                 class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white"
