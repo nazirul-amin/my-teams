@@ -140,9 +140,8 @@ async function saveVCard() {
 <template>
     <Head :title="`${props.user.name} · Contact Card`" />
 
-    <div
-        class="relative mx-auto flex h-screen max-w-md flex-col items-center px-4 pt-6 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-20"
-    >
+    <!-- full-screen background using selectedBg -->
+    <div class="relative min-h-screen w-full">
         <img
             v-if="selectedBg"
             :src="selectedBg"
@@ -150,167 +149,175 @@ async function saveVCard() {
             class="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
         <div class="absolute inset-0"></div>
-        <div class="my-2"></div>
+
+        <!-- centered contact card content -->
         <div
-            class="relative z-1 mt-8 h-38 w-38 shrink-0 sm:h-42 sm:w-42 md:h-46 md:w-46"
+            class="relative mx-auto flex h-full max-w-md flex-col items-center px-4 pt-6 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-20"
         >
+            <div class="my-2"></div>
             <div
-                class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white"
+                class="relative z-1 mt-8 h-38 w-38 shrink-0 sm:h-42 sm:w-42 md:h-46 md:w-46"
             >
                 <div
-                    class="h-full w-full overflow-hidden rounded-full bg-neutral-50"
+                    class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white"
                 >
-                    <img
-                        v-if="photo"
-                        :src="photo"
-                        alt="avatar"
-                        class="h-full w-full object-cover"
-                    />
+                    <div
+                        class="h-full w-full overflow-hidden rounded-full bg-neutral-50"
+                    >
+                        <img
+                            v-if="photo"
+                            :src="photo"
+                            alt="avatar"
+                            class="h-full w-full object-cover"
+                        />
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- position and name -->
-        <div class="z-1 mt-4 space-y-2">
-            <h1
-                class="bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl"
-            >
-                {{ props.user.name }}
-            </h1>
-            <p
-                v-if="position"
-                :class="['text-sm md:text-base', textColorClass]"
-            >
-                {{ position }}
-            </p>
-        </div>
+            <!-- position and name -->
+            <div class="z-1 mt-8 space-y-2">
+                <h1
+                    class="bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl"
+                >
+                    {{ props.user.name }}
+                </h1>
+                <p
+                    v-if="position"
+                    :class="['text-sm md:text-base', textColorClass]"
+                >
+                    {{ position }}
+                </p>
+            </div>
 
-        <!-- phone and email -->
-        <div class="z-1 mt-4 space-y-2">
-            <a
-                v-if="phoneText"
-                :href="`tel:${phoneText}`"
-                class="block bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-xl font-semibold text-transparent md:text-2xl"
-            >
-                {{ phoneDisplay }}
-            </a>
-            <a
-                v-if="emailText"
-                :href="`mailto:${emailText}`"
-                :class="['block text-sm break-all', textColorClass]"
-                >{{ emailText }}</a
-            >
-        </div>
-
-        <div class="z-1 mt-4 max-w-sm space-y-2">
-            <p :class="['font-semibold', textColorClass]">{{ company.name }}</p>
-            <p
-                v-if="company.address && companyAddressLine2"
-                :class="['text-center text-xs break-all', textColorClass]"
-            >
-                {{ company.address }}<br />{{ companyAddressLine2 }}
-            </p>
-        </div>
-
-        <!-- company/team logo and website -->
-        <div
-            class="z-1 mt-4 flex w-full max-w-sm items-center justify-between gap-4 px-4"
-        >
-            <div class="min-w-0">
-                <img
-                    v-if="selectedCompanyLogo"
-                    :src="selectedCompanyLogo"
-                    alt="company logo"
-                    class="h-12 w-24 max-w-full object-contain"
-                />
+            <!-- phone and email -->
+            <div class="z-1 mt-8 space-y-2">
                 <a
-                    v-if="company.website"
-                    :href="company.website"
-                    target="_blank"
-                    class="block cursor-pointer text-xs break-all"
-                    :class="textColorClass"
-                    >{{ company.website }}</a
+                    v-if="phoneText"
+                    :href="`tel:${phoneText}`"
+                    class="block bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-xl font-semibold text-transparent md:text-2xl"
+                >
+                    {{ phoneDisplay }}
+                </a>
+                <a
+                    v-if="emailText"
+                    :href="`mailto:${emailText}`"
+                    :class="['block text-sm break-all', textColorClass]"
+                    >{{ emailText }}</a
                 >
             </div>
-            <div class="min-w-0 text-right">
-                <img
-                    v-if="selectedTeamLogo"
-                    :src="selectedTeamLogo"
-                    alt="team logo"
-                    class="ml-auto h-12 w-24 max-w-full object-contain"
-                />
-                <a
-                    v-if="team.website"
-                    :href="team.website"
-                    target="_blank"
-                    class="block cursor-pointer text-xs break-all"
-                    :class="textColorClass"
-                    >{{ team.website }}</a
+
+            <div class="z-1 mt-8 max-w-sm space-y-2">
+                <p :class="['font-semibold', textColorClass]">
+                    {{ company.name }}
+                </p>
+                <p
+                    v-if="company.address && companyAddressLine2"
+                    :class="['text-center text-xs break-all', textColorClass]"
                 >
+                    {{ company.address }}<br />{{ companyAddressLine2 }}
+                </p>
             </div>
-        </div>
 
-        <!-- social media -->
-        <div
-            class="z-1 mt-4 flex flex-wrap items-center justify-center gap-3 text-sm"
-            :class="textColorClass"
-        >
-            <a
-                v-if="user.profile?.website"
-                :href="user.profile.website"
-                target="_blank"
-                rel="noreferrer"
-                class="inline-flex items-center gap-1 underline"
+            <!-- company/team logo and website -->
+            <div
+                class="z-1 mt-8 flex w-full max-w-sm items-center justify-between gap-4 px-4"
             >
-                <Icon name="globe" class="h-4 w-4" />
-                <span>Website</span>
-            </a>
-            <a
-                v-if="user.profile?.linkedin"
-                :href="user.profile.linkedin"
-                target="_blank"
-                class="inline-flex items-center gap-1 underline"
-            >
-                <Icon name="linkedin" color="#0a66c2" />
-                <span>LinkedIn</span>
-            </a>
-            <a
-                v-if="user.profile?.twitter"
-                :href="user.profile.twitter"
-                target="_blank"
-                class="inline-flex items-center gap-1 underline"
-            >
-                <Icon name="twitter" color="#1DA1F2" />
-                <span>Twitter</span>
-            </a>
-            <a
-                v-if="user.profile?.facebook"
-                :href="user.profile.facebook"
-                target="_blank"
-                class="inline-flex items-center gap-1 underline"
-            >
-                <Icon name="facebook" color="#1877F2" />
-                <span>Facebook</span>
-            </a>
-            <a
-                v-if="user.profile?.instagram"
-                :href="user.profile.instagram"
-                target="_blank"
-                class="inline-flex items-center gap-1 underline"
-            >
-                <Icon name="instagram" color="#962fbf" />
-                <span>Instagram</span>
-            </a>
-        </div>
+                <div class="min-w-0">
+                    <img
+                        v-if="selectedCompanyLogo"
+                        :src="selectedCompanyLogo"
+                        alt="company logo"
+                        class="h-12 w-24 max-w-full object-contain"
+                    />
+                    <a
+                        v-if="company.website"
+                        :href="company.website"
+                        target="_blank"
+                        class="block cursor-pointer text-xs break-all"
+                        :class="textColorClass"
+                        >{{ company.website }}</a
+                    >
+                </div>
+                <div class="min-w-0 text-right">
+                    <img
+                        v-if="selectedTeamLogo"
+                        :src="selectedTeamLogo"
+                        alt="team logo"
+                        class="ml-auto h-12 w-24 max-w-full object-contain"
+                    />
+                    <a
+                        v-if="team.website"
+                        :href="team.website"
+                        target="_blank"
+                        class="block cursor-pointer text-xs break-all"
+                        :class="textColorClass"
+                        >{{ team.website }}</a
+                    >
+                </div>
+            </div>
 
-        <div class="z-1 mx-auto mt-auto w-full max-w-md px-6">
-            <button
-                type="button"
-                @click="saveVCard"
-                class="w-full rounded-full bg-linear-to-tr from-[#ee5b71] to-[#f38456] px-6 py-4 text-center text-base font-semibold text-white shadow-md outline-1 outline-white transition-opacity hover:opacity-95"
+            <!-- social media -->
+            <div
+                class="z-1 mt-8 flex flex-wrap items-center justify-center gap-3 text-sm"
+                :class="textColorClass"
             >
-                Save Contact
-            </button>
+                <a
+                    v-if="user.profile?.website"
+                    :href="user.profile.website"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="inline-flex items-center gap-1 underline"
+                >
+                    <Icon name="globe" class="h-4 w-4" />
+                    <span>Website</span>
+                </a>
+                <a
+                    v-if="user.profile?.linkedin"
+                    :href="user.profile.linkedin"
+                    target="_blank"
+                    class="inline-flex items-center gap-1 underline"
+                >
+                    <Icon name="linkedin" color="#0a66c2" />
+                    <span>LinkedIn</span>
+                </a>
+                <a
+                    v-if="user.profile?.twitter"
+                    :href="user.profile.twitter"
+                    target="_blank"
+                    class="inline-flex items-center gap-1 underline"
+                >
+                    <Icon name="twitter" color="#1DA1F2" />
+                    <span>Twitter</span>
+                </a>
+                <a
+                    v-if="user.profile?.facebook"
+                    :href="user.profile.facebook"
+                    target="_blank"
+                    class="inline-flex items-center gap-1 underline"
+                >
+                    <Icon name="facebook" color="#1877F2" />
+                    <span>Facebook</span>
+                </a>
+                <a
+                    v-if="user.profile?.instagram"
+                    :href="user.profile.instagram"
+                    target="_blank"
+                    class="inline-flex items-center gap-1 underline"
+                >
+                    <Icon name="instagram" color="#962fbf" />
+                    <span>Instagram</span>
+                </a>
+            </div>
+
+            <div class="z-1 mx-auto mt-auto w-full max-w-md px-6">
+                <button
+                    type="button"
+                    @click="saveVCard"
+                    class="w-full rounded-full bg-linear-to-tr from-[#ee5b71] to-[#f38456] px-6 py-4 text-center text-base font-semibold text-white shadow-md outline-1 outline-white transition-opacity hover:opacity-95"
+                >
+                    Save Contact
+                </button>
+            </div>
         </div>
     </div>
 </template>
