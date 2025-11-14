@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Icon from '@/components/Icon.vue';
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
@@ -140,7 +141,7 @@ async function saveVCard() {
     <Head :title="`${props.user.name} · Contact Card`" />
 
     <div
-        class="relative mx-auto flex min-h-screen max-w-md flex-col items-center px-4 pt-10 pb-32 text-center sm:px-6 sm:pb-28 md:pb-24"
+        class="relative mx-auto flex h-screen max-w-md flex-col items-center px-4 pt-6 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-20"
     >
         <img
             v-if="selectedBg"
@@ -151,7 +152,7 @@ async function saveVCard() {
         <div class="absolute inset-0"></div>
         <div class="my-2"></div>
         <div
-            class="relative z-1 mt-6 h-38 w-38 shrink-0 sm:h-42 sm:w-42 md:h-46 md:w-46"
+            class="relative z-1 mt-8 h-38 w-38 shrink-0 sm:h-42 sm:w-42 md:h-46 md:w-46"
         >
             <div
                 class="absolute inset-0 rounded-full bg-linear-to-tr from-[#9b6dad] to-[#f38456] p-[6px] outline-1 outline-white"
@@ -170,7 +171,7 @@ async function saveVCard() {
         </div>
 
         <!-- position and name -->
-        <div class="z-1 mt-8 space-y-2">
+        <div class="z-1 mt-4 space-y-2">
             <h1
                 class="bg-linear-to-tr from-[#ee5b71] to-[#f38456] bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl"
             >
@@ -185,7 +186,7 @@ async function saveVCard() {
         </div>
 
         <!-- phone and email -->
-        <div class="z-1 mt-8 space-y-2">
+        <div class="z-1 mt-4 space-y-2">
             <a
                 v-if="phoneText"
                 :href="`tel:${phoneText}`"
@@ -201,7 +202,7 @@ async function saveVCard() {
             >
         </div>
 
-        <div class="z-1 mt-8 max-w-sm space-y-2">
+        <div class="z-1 mt-4 max-w-sm space-y-2">
             <p :class="['font-semibold', textColorClass]">{{ company.name }}</p>
             <p
                 v-if="company.address && companyAddressLine2"
@@ -213,7 +214,7 @@ async function saveVCard() {
 
         <!-- company/team logo and website -->
         <div
-            class="z-1 mt-8 flex w-full max-w-sm items-center justify-between gap-4 px-4"
+            class="z-1 mt-4 flex w-full max-w-sm items-center justify-between gap-4 px-4"
         >
             <div class="min-w-0">
                 <img
@@ -251,7 +252,7 @@ async function saveVCard() {
 
         <!-- social media -->
         <div
-            class="z-1 mt-8 flex flex-wrap items-center justify-center gap-4 text-sm"
+            class="z-1 mt-4 flex flex-wrap items-center justify-center gap-3 text-sm"
             :class="textColorClass"
         >
             <a
@@ -259,40 +260,50 @@ async function saveVCard() {
                 :href="user.profile.website"
                 target="_blank"
                 rel="noreferrer"
-                class="underline"
-                >{{ user.profile.website }}</a
+                class="inline-flex items-center gap-1 underline"
             >
+                <Icon name="globe" class="h-4 w-4" />
+                <span>Website</span>
+            </a>
             <a
                 v-if="user.profile?.linkedin"
                 :href="user.profile.linkedin"
                 target="_blank"
-                class="underline"
-                >LinkedIn</a
+                class="inline-flex items-center gap-1 underline"
             >
+                <Icon name="linkedin" color="#0a66c2" />
+                <span>LinkedIn</span>
+            </a>
             <a
                 v-if="user.profile?.twitter"
                 :href="user.profile.twitter"
                 target="_blank"
-                class="underline"
-                >Twitter</a
+                class="inline-flex items-center gap-1 underline"
             >
+                <Icon name="twitter" color="#1DA1F2" />
+                <span>Twitter</span>
+            </a>
             <a
                 v-if="user.profile?.facebook"
                 :href="user.profile.facebook"
                 target="_blank"
-                class="underline"
-                >Facebook</a
+                class="inline-flex items-center gap-1 underline"
             >
+                <Icon name="facebook" color="#1877F2" />
+                <span>Facebook</span>
+            </a>
             <a
                 v-if="user.profile?.instagram"
                 :href="user.profile.instagram"
                 target="_blank"
-                class="underline"
-                >Instagram</a
+                class="inline-flex items-center gap-1 underline"
             >
+                <Icon name="instagram" color="#962fbf" />
+                <span>Instagram</span>
+            </a>
         </div>
 
-        <div class="z-1 mx-auto mt-4 w-full max-w-md px-6">
+        <div class="z-1 mx-auto mt-auto w-full max-w-md px-6">
             <button
                 type="button"
                 @click="saveVCard"
