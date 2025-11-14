@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import { ref } from 'vue';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 import DeleteUser from '@/components/DeleteUser.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
+import ImageUpload from '@/components/ImageUpload.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,6 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { type BreadcrumbItem } from '@/types';
-import ImageUpload from '@/components/ImageUpload.vue';
 
 interface Props {
     mustVerifyEmail: boolean;
@@ -143,23 +143,55 @@ const photoFile = ref<File | null>(null);
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="linkedin">LinkedIn</Label>
-                            <Input id="linkedin" name="linkedin" :default-value="props.profile?.linkedin ?? ''" placeholder="LinkedIn URL" />
-                            <InputError class="mt-2" :message="errors.linkedin" />
+                            <Input
+                                id="linkedin"
+                                name="linkedin"
+                                :default-value="props.profile?.linkedin ?? ''"
+                                placeholder="LinkedIn URL"
+                            />
+                            <InputError
+                                class="mt-2"
+                                :message="errors.linkedin"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="twitter">Twitter</Label>
-                            <Input id="twitter" name="twitter" :default-value="props.profile?.twitter ?? ''" placeholder="Twitter URL" />
-                            <InputError class="mt-2" :message="errors.twitter" />
+                            <Input
+                                id="twitter"
+                                name="twitter"
+                                :default-value="props.profile?.twitter ?? ''"
+                                placeholder="Twitter URL"
+                            />
+                            <InputError
+                                class="mt-2"
+                                :message="errors.twitter"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="facebook">Facebook</Label>
-                            <Input id="facebook" name="facebook" :default-value="props.profile?.facebook ?? ''" placeholder="Facebook URL" />
-                            <InputError class="mt-2" :message="errors.facebook" />
+                            <Input
+                                id="facebook"
+                                name="facebook"
+                                :default-value="props.profile?.facebook ?? ''"
+                                placeholder="Facebook URL"
+                            />
+                            <InputError
+                                class="mt-2"
+                                :message="errors.facebook"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="instagram">Instagram</Label>
-                            <Input id="instagram" name="instagram" :default-value="props.profile?.instagram ?? ''" placeholder="Instagram URL" />
-                            <InputError class="mt-2" :message="errors.instagram" />
+                            <Input
+                                id="instagram"
+                                name="instagram"
+                                :default-value="props.profile?.instagram ?? ''"
+                                placeholder="Instagram URL"
+                            />
+                            <InputError
+                                class="mt-2"
+                                :message="errors.instagram"
+                            />
                         </div>
                     </div>
 

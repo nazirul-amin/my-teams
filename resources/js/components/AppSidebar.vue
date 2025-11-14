@@ -34,7 +34,7 @@ const mainNavItems: NavItem[] = [
         icon: Flag,
     },
     {
-        title: 'Users',
+        title: 'Members',
         href: '/users',
         icon: Users,
     },
