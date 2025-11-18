@@ -59,12 +59,15 @@ export function initializeTheme() {
         return;
     }
 
-    // Initialize theme from saved preference or default to system...
+    // Initialize theme from saved preference or default to light...
     const savedAppearance = getStoredAppearance();
-    updateTheme(savedAppearance || 'light');
+    const initial = savedAppearance || 'light';
+    updateTheme(initial);
 
-    // Set up system theme change listener...
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    // Only react to system changes if 'system' is selected.
+    if (initial === 'system') {
+        mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    }
 }
 
 const appearance = ref<Appearance>('light');

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { useQRCode } from '@vueuse/integrations/useQRCode';
 import { is } from 'laravel-permission-to-vuejs';
 import { computed, ref, watch } from 'vue';
 
@@ -104,11 +105,18 @@ function contactCardAbsoluteUrl(user: any): string | null {
     return `${window.location.origin}${relative}`;
 }
 
-function contactCardQrUrl(user: any): string | null {
+const userQrMap: Record<string, any> = {};
+
+function contactCardQrDataUrl(user: any): string | null {
     const abs = contactCardAbsoluteUrl(user);
     if (!abs) return null;
-    const size = '512x512';
-    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}&data=${encodeURIComponent(abs)}`;
+    const key = String(
+        user?.contact_card?.slug || user?.contactCard?.slug || user?.id,
+    );
+    if (!userQrMap[key]) {
+        userQrMap[key] = useQRCode(abs, { width: 512, margin: 1 });
+    }
+    return userQrMap[key]?.value || null;
 }
 
 function canGenerate(user: any): boolean {
@@ -118,6 +126,20 @@ function canGenerate(user: any): boolean {
             (is('admin') && user.created_by === props.auth_id) ||
             is('manager'),
     );
+}
+
+// QR preview dialog state
+const showQrDialog = ref(false);
+const qrUser = ref<any | null>(null);
+const currentQrDataUrl = computed<string | null>(() =>
+    qrUser.value ? contactCardQrDataUrl(qrUser.value) : null,
+);
+
+function openQrDialog(user: any) {
+    qrUser.value = user;
+    // Precompute/cache QR if not already
+    contactCardQrDataUrl(user);
+    showQrDialog.value = true;
 }
 
 // Dialog state for generation with selection
@@ -272,14 +294,13 @@ function submitGenerate() {
                                 >
                                     Contact Card
                                 </a>
-                                <a
-                                    :href="contactCardQrUrl(user)"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                <button
+                                    type="button"
+                                    @click.stop="openQrDialog(user)"
                                     class="hover:bg-neutral-5 inline-flex flex-1 cursor-pointer items-center justify-center rounded-md border p-1 text-sm"
                                 >
                                     QR
-                                </a>
+                                </button>
                             </div>
                             <div v-if="canGenerate(user)" class="flex w-full">
                                 <button
@@ -375,6 +396,50 @@ function submitGenerate() {
                         Generate
                     </button>
                 </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        <Dialog :open="showQrDialog" @update:open="(v) => (showQrDialog = v)">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Contact Card QR</DialogTitle>
+                </DialogHeader>
+
+                <div class="flex flex-col items-center gap-3 py-2">
+                    <div
+                        class="aspect-square w-64 overflow-hidden rounded-md border"
+                    >
+                        <img
+                            v-if="currentQrDataUrl"
+                            :src="currentQrDataUrl"
+                            alt="Contact Card QR"
+                            class="h-full w-full object-contain"
+                        />
+                        <div
+                            v-else
+                            class="flex h-full w-full items-center justify-center text-sm text-neutral-500"
+                        >
+                            Generating...
+                        </div>
+                    </div>
+
+                    <div class="flex w-full items-center justify-end gap-2">
+                        <a
+                            v-if="currentQrDataUrl"
+                            :href="currentQrDataUrl"
+                            download="contact-card-qr.png"
+                            class="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                        >
+                            Download
+                        </a>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-white hover:opacity-90"
+                            @click="showQrDialog = false"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     </AppLayout>

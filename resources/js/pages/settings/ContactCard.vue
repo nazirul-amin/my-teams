@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import type { BreadcrumbItem } from '@/types';
+import { useQRCode } from '@vueuse/integrations/useQRCode';
 import { computed, ref, watch } from 'vue';
 
 interface Company {
@@ -85,11 +86,8 @@ const absoluteShareUrl = computed(() => {
     }
 });
 
-const qrImageUrl = computed(() => {
-    if (!absoluteShareUrl.value) return null;
-    const data = encodeURIComponent(absoluteShareUrl.value);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=1&data=${data}`;
-});
+const qrText = computed(() => absoluteShareUrl.value || '');
+const qrImageUrl = useQRCode(qrText, { width: 300, margin: 1 });
 </script>
 
 <template>
@@ -187,9 +185,12 @@ const qrImageUrl = computed(() => {
                         </p>
                         <div v-if="publicUrl" class="text-sm">
                             Share link:
-                            <Link :href="publicUrl" class="underline">{{
-                                publicUrl
-                            }}</Link>
+                            <Link
+                                :href="publicUrl"
+                                target="_blank"
+                                class="underline"
+                                >{{ publicUrl }}</Link
+                            >
                         </div>
                     </div>
 
