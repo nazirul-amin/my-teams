@@ -55,7 +55,7 @@ watch(
     () => user.name,
     (name) => {
         if (!props.contactCard?.slug) {
-            slugInput.value = makeSlug(name as string);
+            slugInput.value = makeSlug(name);
         }
     },
 );
@@ -71,7 +71,7 @@ watch(slugInput, (v) => (form.slug = v));
 const submit = () => form.post('/settings/contact-card');
 
 const publicUrl = computed(() =>
-    props.contactCard?.slug ? `/c/${props.contactCard.slug}` : null,
+    props.contactCard?.slug ? `/contact-card/${props.contactCard.slug}` : null,
 );
 
 const absoluteShareUrl = computed(() => {
@@ -195,7 +195,7 @@ const qrImageUrl = computed(() => {
 
                     <div v-if="qrImageUrl" class="flex items-center gap-6 pt-2">
                         <img
-                            :src="qrImageUrl as string"
+                            :src="qrImageUrl"
                             alt="Contact card QR"
                             class="h-36 w-36 rounded border"
                         />
@@ -205,7 +205,7 @@ const qrImageUrl = computed(() => {
                                 contact card.
                             </p>
                             <a
-                                :href="qrImageUrl as string"
+                                :href="qrImageUrl"
                                 download="contact-card-qr.png"
                                 class="text-sm underline"
                                 >Download QR</a

@@ -8,9 +8,10 @@ use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Company;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class TeamController extends BaseController
@@ -26,21 +27,26 @@ class TeamController extends BaseController
 
         $query = Team::query()->with(['company:id,name,created_by']);
 
-        if (! $user->hasRole(RolesEnum::SUPERADMIN->value)) {
+        if ($user->hasRole(RolesEnum::SUPERADMIN->value)) {
+            // no additional restrictions
+        } elseif ($user->hasRole(RolesEnum::ADMIN->value)) {
             // Admin: teams of companies they created OR are assigned to
-            // Manager/User: teams of companies assigned to them
             $query->whereHas('company', function ($q) use ($user) {
-                $q->where(function ($qq) use ($user) {
-                    $qq->whereHas('users', function ($m) use ($user) {
-                        $m->where('user_id', $user->getKey());
-                    });
-                });
-
-                if ($user->hasRole(RolesEnum::ADMIN->value)) {
-                    $q->orWhere('created_by', $user->getKey());
-                }
+                $q->whereHas('users', function ($m) use ($user) {
+                    $m->where('users.id', $user->getKey());
+                })->orWhere('created_by', $user->getKey());
+            });
+        } else {
+            // Managers and regular users: only teams they are assigned to
+            $query->whereHas('users', function ($q) use ($user) {
+                $q->where('users.id', $user->getKey());
             });
         }
+
+        // Expose whether the auth user is a member of each team (for UI gating)
+        $query->withCount(['users as is_member' => function ($q) use ($user) {
+            $q->where('users.id', $user->getKey());
+        }]);
 
         $this->applySearch($query, ['name', 'slug']);
         $perPage = $this->perPage();
@@ -294,5 +300,74 @@ class TeamController extends BaseController
 
             return $this->errorBack('Failed to delete team');
         }
+    }
+
+    /**
+     * Assign selected users to the team (adds, does not remove existing). Only users from the team's company are allowed.
+     */
+    public function assignUsers(Request $request, Team $team)
+    {
+        Gate::authorize('update', $team);
+
+        $auth = $request->user();
+        $ids = collect($request->input('user_ids', []))->filter();
+
+        if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
+            // Only assign users who are already members of the team's company
+            $companyUserIds = $team->company->users()->pluck('users.id')->unique();
+            $attachIds = $companyUserIds->intersect($ids)->all();
+            $team->users()->sync($attachIds);
+        } elseif ($auth->hasRole(RolesEnum::ADMIN->value)) {
+            // Can target teams they created or are assigned to or whose company they created/are assigned to
+            $canTarget = ($team->created_by === $auth->getKey())
+                || $team->users()->where('users.id', $auth->getKey())->exists()
+                || ($team->company->created_by === $auth->getKey())
+                || $team->company->users()->where('users.id', $auth->getKey())->exists();
+            abort_unless($canTarget, 403);
+
+            // Filter to users admin can assign: created by them or in their companies
+            $adminCompanyIds = $auth->companies()->pluck('companies.id');
+            $assignableIds = User::query()
+                ->whereIn('id', $ids)
+                ->where(function ($q) use ($auth, $adminCompanyIds) {
+                    $q->where('created_by', $auth->getKey())
+                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
+                            $qc->whereIn('companies.id', $adminCompanyIds);
+                        });
+                })
+                ->pluck('id')
+                ->unique();
+
+            // Only assign users who are already members of the team's company
+            $companyUserIds = $team->company->users()->pluck('users.id')->unique();
+            $attachIds = $companyUserIds->intersect($assignableIds)->all();
+            $team->users()->sync($attachIds);
+        } elseif ($auth->hasRole(RolesEnum::MANAGER->value)) {
+            // Only teams assigned to them
+            $canTarget = $team->users()->where('users.id', $auth->getKey())->exists();
+            abort_unless($canTarget, 403);
+
+            // Users must be in same companies as manager and already in the team's company
+            $managerCompanyIds = $auth->companies()->pluck('companies.id');
+            $eligibleIds = User::query()
+                ->whereIn('id', $ids)
+                ->whereHas('companies', function ($q) use ($managerCompanyIds) {
+                    $q->whereIn('companies.id', $managerCompanyIds);
+                })
+                ->pluck('id')
+                ->unique();
+
+            $companyUserIds = $team->company->users()->pluck('users.id')->unique();
+            $attachIds = $companyUserIds->intersect($eligibleIds)->all();
+            $team->users()->sync($attachIds);
+        } else {
+            abort(403);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Members assigned to team');
     }
 }

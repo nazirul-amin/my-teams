@@ -9,9 +9,9 @@ use App\Mail\UserCreated;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -24,7 +24,7 @@ class UserController extends BaseController
 
         $auth = request()->user();
 
-        $query = User::query()->with('profile');
+        $query = User::query()->with(['profile', 'contactCard']);
 
         if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
             // no filter
@@ -38,12 +38,9 @@ class UserController extends BaseController
                     });
             });
         } else {
-            // Manager/User: users who share BOTH company and team
-            $userCompanyIds = $auth->companies()->pluck('companies.id');
+            // Manager/User: users who share a TEAM with the auth user
             $userTeamIds = $auth->teams()->pluck('teams.id');
-            $query->whereHas('companies', function ($q) use ($userCompanyIds) {
-                $q->whereIn('companies.id', $userCompanyIds);
-            })->whereHas('teams', function ($q) use ($userTeamIds) {
+            $query->whereHas('teams', function ($q) use ($userTeamIds) {
                 $q->whereIn('teams.id', $userTeamIds);
             });
         }
@@ -64,6 +61,7 @@ class UserController extends BaseController
                 'search' => (string) request('search', ''),
                 'per_page' => $perPage,
             ],
+            'auth_id' => $auth->getKey(),
         ]);
     }
 
@@ -299,11 +297,13 @@ class UserController extends BaseController
             // Profile upsert (basic fields + images)
             $profile = (array) ($data['profile'] ?? []);
             $allowedProfileKeys = [
-                'bio','position','phone','website','linkedin','twitter','facebook','instagram','photo','cover_photo',
+                'bio', 'position', 'phone', 'website', 'linkedin', 'twitter', 'facebook', 'instagram', 'photo', 'cover_photo',
             ];
             $profileData = array_intersect_key($profile, array_flip($allowedProfileKeys));
             // Normalize empty strings to nulls
-            $profileData = array_map(function ($v) { return ($v === '') ? null : $v; }, $profileData);
+            $profileData = array_map(function ($v) {
+                return ($v === '') ? null : $v;
+            }, $profileData);
 
             // Load existing profile to manage file replacements/removals
             $existingProfile = $user->profile()->first();
@@ -314,7 +314,10 @@ class UserController extends BaseController
                 if ($file && $file->isValid()) {
                     // delete old file if exists
                     if ($existingProfile && ! empty($existingProfile->photo)) {
-                        try { Storage::delete($existingProfile->photo); } catch (\Throwable $e) {}
+                        try {
+                            Storage::delete($existingProfile->photo);
+                        } catch (\Throwable $e) {
+                        }
                     }
                     $path = $file->store('profiles/photos', 'public');
                     // store path relative to disk root for consistency with Storage::delete
@@ -322,7 +325,10 @@ class UserController extends BaseController
                 }
             } elseif ((bool) $request->boolean('photo_removed')) {
                 if ($existingProfile && ! empty($existingProfile->photo)) {
-                    try { Storage::delete($existingProfile->photo); } catch (\Throwable $e) {}
+                    try {
+                        Storage::delete($existingProfile->photo);
+                    } catch (\Throwable $e) {
+                    }
                 }
                 $profileData['photo'] = null;
             }
@@ -332,14 +338,20 @@ class UserController extends BaseController
                 $file = $request->file('cover_photo_file');
                 if ($file && $file->isValid()) {
                     if ($existingProfile && ! empty($existingProfile->cover_photo)) {
-                        try { Storage::delete($existingProfile->cover_photo); } catch (\Throwable $e) {}
+                        try {
+                            Storage::delete($existingProfile->cover_photo);
+                        } catch (\Throwable $e) {
+                        }
                     }
                     $path = $file->store('profiles/covers', 'public');
                     $profileData['cover_photo'] = $path;
                 }
             } elseif ((bool) $request->boolean('cover_photo_removed')) {
                 if ($existingProfile && ! empty($existingProfile->cover_photo)) {
-                    try { Storage::delete($existingProfile->cover_photo); } catch (\Throwable $e) {}
+                    try {
+                        Storage::delete($existingProfile->cover_photo);
+                    } catch (\Throwable $e) {
+                    }
                 }
                 $profileData['cover_photo'] = null;
             }
@@ -418,5 +430,37 @@ class UserController extends BaseController
 
             return $this->errorBack('Failed to delete user');
         }
+    }
+
+    public function companies(User $user)
+    {
+        $auth = request()->user();
+        // Super Admin: all companies of target user
+        if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
+            $companies = $user->companies()->orderBy('name')->get(['companies.id', 'companies.name']);
+
+            return response()->json($companies);
+        }
+
+        // Admin: only if they created the user
+        if ($auth->hasRole(RolesEnum::ADMIN->value)) {
+            abort_unless($user->created_by === $auth->getKey(), 403);
+            $companies = $user->companies()->orderBy('name')->get(['companies.id', 'companies.name']);
+
+            return response()->json($companies);
+        }
+
+        // Manager: only companies shared with the manager
+        if ($auth->hasRole(RolesEnum::MANAGER->value)) {
+            $managerCompanyIds = $auth->companies()->pluck('companies.id');
+            $companies = $user->companies()
+                ->whereIn('companies.id', $managerCompanyIds)
+                ->orderBy('name')
+                ->get(['companies.id', 'companies.name']);
+
+            return response()->json($companies);
+        }
+
+        abort(403);
     }
 }

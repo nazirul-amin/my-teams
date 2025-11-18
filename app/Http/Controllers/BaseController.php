@@ -11,7 +11,7 @@ abstract class BaseController extends Controller
     /**
      * Get per-page value from request with a default.
      */
-    protected function perPage(string $key = 'per_page', int $default = 10): int
+    protected function perPage(string $key = 'per_page', int $default = 12): int
     {
         return (int) request($key, $default);
     }

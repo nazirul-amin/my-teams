@@ -70,13 +70,23 @@ class UserPolicy
         if ($user->id === $target->id) {
             return true;
         }
-        // Admin can update users they created OR users who share a company
+        // Admin can update users they created AND who share a company
         if ($user->hasRole(RolesEnum::ADMIN->value)) {
-            if ($target->created_by === $user->id) {
-                return true;
-            }
+            $createdByAdmin = ($target->created_by === $user->id);
+            $sharesCompany = $target->companies()->whereIn('companies.id', $user->companies()->pluck('companies.id'))->exists();
 
-            return $target->companies()->whereIn('companies.id', $user->companies()->pluck('companies.id'))->exists();
+            return $createdByAdmin && $sharesCompany;
+        }
+
+        // Managers can update users who share BOTH a company and a team
+        if ($user->hasRole(RolesEnum::MANAGER->value)) {
+            $sharesCompany = $target->companies()->whereIn('companies.id', $user->companies()->pluck('companies.id'))->exists();
+            if (! $sharesCompany) {
+                return false;
+            }
+            $sharesTeam = $target->teams()->whereIn('teams.id', $user->teams()->pluck('teams.id'))->exists();
+
+            return $sharesTeam;
         }
 
         return false;

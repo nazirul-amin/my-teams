@@ -19,8 +19,8 @@ const props = defineProps<{
 const form = useForm({
     name: '',
     email: '',
-    role: '' as string,
-    company_ids: [] as string[],
+    role: '',
+    company_ids: [],
 });
 
 function submit() {

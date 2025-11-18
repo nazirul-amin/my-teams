@@ -77,7 +77,7 @@ watch(
 
         <div class="group relative" v-if="hasPreview">
             <img
-                :src="previewUrl as string"
+                :src="previewUrl"
                 :class="[
                     'rounded-md border bg-white object-contain',
                     previewClass ?? 'h-32 w-full',

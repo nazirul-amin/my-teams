@@ -7,8 +7,9 @@ use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -111,7 +112,7 @@ class CompanyController extends BaseController
                 });
             }
             $assignableIds = $assignable->whereIn('id', $ids)->pluck('id')->unique();
-            $company->users()->syncWithoutDetaching($assignableIds->all());
+            $company->users()->sync($assignableIds->all());
 
             return $this->successRedirect('companies.index', 'Company created');
         } catch (\Throwable $th) {
@@ -275,29 +276,70 @@ class CompanyController extends BaseController
         }
     }
 
-    /**
-     * Return users assigned to a company that the current user can use for team assignment.
-     */
-    public function users(Company $company)
+    public function teams(Company $company)
     {
-        // Access check: user must be able to create/update teams for this company
         $auth = request()->user();
+        // Basic access: must be creator or a member of the company, unless super-admin
         if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            $allowed = Company::query()
-                ->whereKey($company->getKey())
-                ->where(function ($q) use ($auth) {
-                    $q->where('created_by', $auth->getKey())
-                        ->orWhereHas('users', function ($m) use ($auth) {
-                            $m->where('users.id', $auth->getKey());
-                        });
-                })
-                ->exists();
-
+            $allowed = ($company->created_by === $auth->getKey())
+                || $company->users()->where('users.id', $auth->getKey())->exists();
             abort_unless($allowed, 403);
         }
 
-        $users = $company->users()->orderBy('name')->get(['users.id', 'users.name', 'users.email']);
+        $query = $company->teams()->orderBy('name');
 
-        return response()->json($users);
+        // Optional filter by user membership (for selecting teams the target user belongs to)
+        $userId = request('user_id');
+        if ($userId) {
+            $query->whereHas('users', function ($q) use ($userId) {
+                $q->where('users.id', $userId);
+            });
+        }
+
+        $teams = $query->get(['teams.id', 'teams.name']);
+
+        return response()->json($teams);
+    }
+
+    /**
+     * Assign selected users to the company (adds, does not remove existing).
+     */
+    public function assignUsers(Request $request, Company $company)
+    {
+        Gate::authorize('update', $company);
+
+        $auth = $request->user();
+        $ids = collect($request->input('user_ids', []))->filter();
+
+        if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
+            $company->users()->sync($ids->all());
+        } elseif ($auth->hasRole(RolesEnum::ADMIN->value)) {
+            // Admin can target companies they created or are assigned to
+            $canTarget = ($company->created_by === $auth->getKey())
+                || $company->users()->where('users.id', $auth->getKey())->exists();
+            abort_unless($canTarget, 403);
+
+            // Filter to users admin can assign: created by them or in their companies
+            $adminCompanyIds = $auth->companies()->pluck('companies.id');
+            $assignableIds = User::query()
+                ->whereIn('id', $ids)
+                ->where(function ($q) use ($auth, $adminCompanyIds) {
+                    $q->where('created_by', $auth->getKey())
+                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
+                            $qc->whereIn('companies.id', $adminCompanyIds);
+                        });
+                })
+                ->pluck('id')
+                ->unique();
+            $company->users()->syncWithoutDetaching($assignableIds->all());
+        } else {
+            abort(403);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Members assigned');
     }
 }

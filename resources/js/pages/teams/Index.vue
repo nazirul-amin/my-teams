@@ -1,7 +1,15 @@
 <script setup lang="ts">
+import MultiSelect from '@/components/MultiSelect.vue';
 import ResourceCard from '@/components/ResourceCard.vue';
 import ResourceGrid from '@/components/ResourceGrid.vue';
 import UiButton from '@/components/ui/button/Button.vue';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { is } from 'laravel-permission-to-vuejs';
@@ -21,6 +29,11 @@ const canManage = computed(() => Boolean(is('admin') || is('super-admin')));
 const canEditTeams = computed(() =>
     Boolean(is('admin') || is('super-admin') || is('manager')),
 );
+function canAssign(team: any) {
+    if (is('super-admin') || is('admin')) return true;
+    // Managers can assign only if they are members of the team
+    return is('manager') && Number(team?.is_member || 0) > 0;
+}
 
 const items = ref<any[]>(props.teams?.data || []);
 const isLoadingMore = ref(false);
@@ -51,6 +64,19 @@ function goto(params: Record<string, unknown> = {}) {
             },
         },
     );
+}
+
+async function fetchAssignedUsers(teamId: string) {
+    try {
+        const res = await fetch(`/shared/assigned-users?team_id=${teamId}`, {
+            headers: { Accept: 'application/json' },
+        });
+        if (!res.ok) throw new Error('Failed to load assigned users');
+        const data: Array<{ id: string }> = await res.json();
+        selectedUserIds.value = data.map((u) => u.id);
+    } catch (e) {
+        // no-op
+    }
 }
 
 watch(
@@ -94,6 +120,59 @@ function loadMore() {
     isLoadingMore.value = true;
     pageIndex.value += 1;
     goto();
+}
+
+// Assign members dialog state
+const showAssign = ref(false);
+const targetTeam = ref<any | null>(null);
+const assignableUsers = ref<Array<{ id: string; name: string; email: string }>>(
+    [],
+);
+const selectedUserIds = ref<string[]>([]);
+const loadingAssignable = ref(false);
+const submittingAssign = ref(false);
+
+async function fetchAssignableUsers(teamId: string) {
+    loadingAssignable.value = true;
+    try {
+        const res = await fetch(`/shared/assignable-users?team_id=${teamId}`, {
+            headers: { Accept: 'application/json' },
+        });
+        if (!res.ok) throw new Error('Failed to load users');
+        assignableUsers.value = await res.json();
+    } catch (e) {
+        // no-op
+    } finally {
+        loadingAssignable.value = false;
+    }
+}
+
+async function openAssignDialog(team: any) {
+    targetTeam.value = team;
+    selectedUserIds.value = [];
+    showAssign.value = true;
+    await Promise.all([
+        fetchAssignableUsers(team.id),
+        fetchAssignedUsers(team.id),
+    ]);
+}
+
+function submitAssign() {
+    if (!targetTeam.value || !selectedUserIds.value.length) return;
+    submittingAssign.value = true;
+    router.post(
+        `/teams/${targetTeam.value.id}/assign-users`,
+        { user_ids: selectedUserIds.value },
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                submittingAssign.value = false;
+            },
+            onSuccess: () => {
+                showAssign.value = false;
+            },
+        },
+    );
 }
 </script>
 
@@ -139,25 +218,96 @@ function loadMore() {
                                       },
                                   ]
                                 : []),
-                            ...(item.manager?.name
+                            ...(item.manager_names && item.manager_names.length
                                 ? [
                                       {
-                                          label: 'Manager',
-                                          value: item.manager.name,
+                                          label:
+                                              item.manager_names.length > 1
+                                                  ? 'Managers'
+                                                  : 'Manager',
+                                          value: item.manager_names.join(', '),
                                       },
                                   ]
                                 : []),
                         ]"
                         :can-manage="canEditTeams"
                         :show-url="`/teams/${item.id}`"
-                        :edit-url="`/teams/${item.id}/edit`"
+                        :edit-url="
+                            canManage || canAssign(item)
+                                ? `/teams/${item.id}/edit`
+                                : undefined
+                        "
                         :delete-url="
                             canManage ? `/teams/${item.id}` : undefined
                         "
-                    />
+                    >
+                        <template #actions>
+                            <div v-if="canAssign(item)" class="flex w-full">
+                                <button
+                                    type="button"
+                                    class="inline-flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                                    @click.stop="openAssignDialog(item)"
+                                >
+                                    Assign Members
+                                </button>
+                            </div>
+                        </template>
+                    </ResourceCard>
                 </template>
             </ResourceGrid>
             <div v-else class="text-sm text-neutral-600">No teams found.</div>
+
+            <!-- Assign Members Dialog -->
+            <Dialog :open="showAssign" @update:open="(v) => (showAssign = v)">
+                <DialogContent class="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Assign Members</DialogTitle>
+                    </DialogHeader>
+                    <div class="space-y-3 py-2">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium"
+                                >Team</label
+                            >
+                            <div class="text-sm">{{ targetTeam?.name }}</div>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium"
+                                >Users</label
+                            >
+                            <MultiSelect
+                                v-model="selectedUserIds"
+                                :options="
+                                    assignableUsers.map((u) => ({
+                                        label: `${u.name} <${u.email}>`,
+                                        value: u.id,
+                                    }))
+                                "
+                                :loading="loadingAssignable"
+                                placeholder="Select users to assign"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                            @click="showAssign = false"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
+                            :disabled="
+                                !selectedUserIds.length || submittingAssign
+                            "
+                            @click="submitAssign"
+                        >
+                            Assign
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     </AppLayout>
 </template>

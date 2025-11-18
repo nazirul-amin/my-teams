@@ -58,9 +58,12 @@ watch(
         assignableUsers.value = [];
         if (!companyId) return;
         try {
-            const res = await fetch(`/companies/${companyId}/users`, {
-                headers: { Accept: 'application/json' },
-            });
+            const res = await fetch(
+                `/shared/assignable-users?company_id=${companyId}`,
+                {
+                    headers: { Accept: 'application/json' },
+                },
+            );
             if (res.ok) {
                 assignableUsers.value = await res.json();
             }

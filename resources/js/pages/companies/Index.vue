@@ -1,7 +1,15 @@
 <script setup lang="ts">
+import MultiSelect from '@/components/MultiSelect.vue';
 import ResourceCard from '@/components/ResourceCard.vue';
 import ResourceGrid from '@/components/ResourceGrid.vue';
 import UiButton from '@/components/ui/button/Button.vue';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { is } from 'laravel-permission-to-vuejs';
@@ -54,6 +62,22 @@ function goto(params: Record<string, unknown> = {}) {
     );
 }
 
+async function fetchAssignedUsers(companyId: string) {
+    try {
+        const res = await fetch(
+            `/shared/assigned-users?company_id=${companyId}`,
+            {
+                headers: { Accept: 'application/json' },
+            },
+        );
+        if (!res.ok) throw new Error('Failed to load assigned users');
+        const data: Array<{ id: string }> = await res.json();
+        selectedUserIds.value = data.map((u) => u.id);
+    } catch (e) {
+        // no-op
+    }
+}
+
 watch(
     () => props.companies,
     (newVal, oldVal) => {
@@ -97,6 +121,62 @@ function loadMore() {
     isLoadingMore.value = true;
     pageIndex.value += 1;
     goto();
+}
+
+// Assign members dialog state
+const showAssign = ref(false);
+const targetCompany = ref<any | null>(null);
+const assignableUsers = ref<Array<{ id: string; name: string; email: string }>>(
+    [],
+);
+const selectedUserIds = ref<string[]>([]);
+const loadingAssignable = ref(false);
+const submittingAssign = ref(false);
+
+async function fetchAssignableUsers(companyId: string) {
+    loadingAssignable.value = true;
+    try {
+        const res = await fetch(
+            `/shared/assignable-users?company_id=${companyId}`,
+            {
+                headers: { Accept: 'application/json' },
+            },
+        );
+        if (!res.ok) throw new Error('Failed to load users');
+        assignableUsers.value = await res.json();
+    } catch (e) {
+        // no-op
+    } finally {
+        loadingAssignable.value = false;
+    }
+}
+
+async function openAssignDialog(company: any) {
+    targetCompany.value = company;
+    selectedUserIds.value = [];
+    showAssign.value = true;
+    await Promise.all([
+        fetchAssignableUsers(company.id),
+        fetchAssignedUsers(company.id),
+    ]);
+}
+
+function submitAssign() {
+    if (!targetCompany.value || !selectedUserIds.value.length) return;
+    submittingAssign.value = true;
+    router.post(
+        `/companies/${targetCompany.value.id}/assign-users`,
+        { user_ids: selectedUserIds.value },
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                submittingAssign.value = false;
+            },
+            onSuccess: () => {
+                showAssign.value = false;
+            },
+        },
+    );
 }
 </script>
 
@@ -148,12 +228,76 @@ function loadMore() {
                         :show-url="`/companies/${item.id}`"
                         :edit-url="`/companies/${item.id}/edit`"
                         :delete-url="`/companies/${item.id}`"
-                    />
+                    >
+                        <template #actions>
+                            <div v-if="canManage" class="flex w-full">
+                                <button
+                                    type="button"
+                                    class="inline-flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                                    @click.stop="openAssignDialog(item)"
+                                >
+                                    Assign Members
+                                </button>
+                            </div>
+                        </template>
+                    </ResourceCard>
                 </template>
             </ResourceGrid>
             <div v-else class="text-sm text-neutral-600">
                 No companies found.
             </div>
+
+            <!-- Assign Members Dialog -->
+            <Dialog :open="showAssign" @update:open="(v) => (showAssign = v)">
+                <DialogContent class="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Assign Members</DialogTitle>
+                    </DialogHeader>
+                    <div class="space-y-3 py-2">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium"
+                                >Company</label
+                            >
+                            <div class="text-sm">{{ targetCompany?.name }}</div>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium"
+                                >Users</label
+                            >
+                            <MultiSelect
+                                v-model="selectedUserIds"
+                                :options="
+                                    assignableUsers.map((u) => ({
+                                        label: `${u.name} <${u.email}>`,
+                                        value: u.id,
+                                    }))
+                                "
+                                :loading="loadingAssignable"
+                                placeholder="Select users to assign"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                            @click="showAssign = false"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
+                            :disabled="
+                                !selectedUserIds.length || submittingAssign
+                            "
+                            @click="submitAssign"
+                        >
+                            Assign
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     </AppLayout>
 </template>
