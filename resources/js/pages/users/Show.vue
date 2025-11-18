@@ -7,8 +7,8 @@ const props = defineProps<{
 }>();
 
 const breadcrumbs = [
-    { title: 'Users', href: '/users' },
-    { title: props.user?.name, href: `/users/${props.user?.id}` },
+    { title: 'Members', href: '/members' },
+    { title: props.user?.name, href: `/members/${props.user?.id}` },
 ];
 </script>
 
@@ -25,7 +25,7 @@ const breadcrumbs = [
 
             <div class="pt-4">
                 <Link
-                    href="/users"
+                    href="/members"
                     class="inline-flex items-center rounded-md border px-4 py-2 text-sm"
                     >Back</Link
                 >

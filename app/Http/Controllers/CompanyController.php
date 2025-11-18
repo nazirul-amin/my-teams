@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -231,8 +232,38 @@ class CompanyController extends BaseController
     {
         try {
             Gate::authorize('delete', $company);
-            $company->users()->detach();
-            $company->delete();
+            DB::transaction(function () use ($company) {
+                // Detach company members
+                $company->users()->detach();
+
+                // Remove company stored assets if present
+                foreach (['logo_light', 'logo_dark', 'bg_light', 'bg_dark'] as $imageField) {
+                    if (! empty($company->{$imageField})) {
+                        $publicPrefix = '/storage/';
+                        $relativePath = str_starts_with($company->{$imageField}, $publicPrefix)
+                            ? substr($company->{$imageField}, strlen($publicPrefix))
+                            : ltrim($company->{$imageField}, '/');
+                        try {
+                            Storage::disk('public')->delete($relativePath);
+                        } catch (\Throwable $e) {
+                            // ignore file delete errors
+                        }
+                    }
+                }
+
+                // Delete teams under this company (and detach their users)
+                $company->teams()->each(function ($team) {
+                    try {
+                        $team->users()->detach();
+                    } catch (\Throwable $e) {
+                        // ignore
+                    }
+                    $team->delete();
+                });
+
+                // Finally delete the company
+                $company->delete();
+            });
 
             return $this->successRedirect('companies.index', 'Company deleted');
         } catch (\Throwable $th) {

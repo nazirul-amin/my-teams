@@ -114,7 +114,7 @@ function loadMore() {
 
                 <div class="ml-auto flex items-center gap-2">
                     <Link v-if="canManage" href="/teams/create">
-                        <UiButton>Create</UiButton>
+                        <UiButton>Add Team</UiButton>
                     </Link>
                 </div>
             </div>

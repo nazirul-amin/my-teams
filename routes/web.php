@@ -12,7 +12,7 @@ Route::get('/', function () {
 })->name('home');
 
 // Public contact card
-Route::get('c/{slug}', [ContactCardPublicController::class, 'show'])->name('contact-card.public.show');
+Route::get('contact-card/{slug}', [ContactCardPublicController::class, 'show'])->name('contact-card.public.show');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
@@ -22,8 +22,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('companies', CompanyController::class);
     Route::get('companies/{company}/users', [CompanyController::class, 'users'])->name('companies.users');
     Route::resource('teams', TeamController::class);
-    Route::resource('users', UserController::class)->except(['show']);
-    Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::resource('members', UserController::class);
 });
 
 require __DIR__.'/settings.php';

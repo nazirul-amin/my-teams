@@ -11,6 +11,8 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -166,7 +168,7 @@ class UserController extends BaseController
             $assignableIds = $assignable->whereIn('id', $companyIds)->pluck('id');
             $user->companies()->sync($assignableIds);
 
-            return $this->successRedirect('users.index', 'User created');
+            return $this->successRedirect('members.index', 'User created');
         } catch (\Throwable $th) {
             $this->logException($th, 'create user', [
                 'data' => $request->validated(),
@@ -222,6 +224,18 @@ class UserController extends BaseController
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'profile' => [
+                    'bio' => $user->profile?->bio ?? null,
+                    'position' => $user->profile?->position ?? null,
+                    'phone' => $user->profile?->phone ?? null,
+                    'website' => $user->profile?->website ?? null,
+                    'linkedin' => $user->profile?->linkedin ?? null,
+                    'twitter' => $user->profile?->twitter ?? null,
+                    'facebook' => $user->profile?->facebook ?? null,
+                    'instagram' => $user->profile?->instagram ?? null,
+                    'photo' => $user->profile?->photo ?? null,
+                    'cover_photo' => $user->profile?->cover_photo ?? null,
+                ],
             ],
             'companies' => $companies,
             'assigned_company_ids' => $currentCompanyIds,
@@ -282,7 +296,59 @@ class UserController extends BaseController
                 $user->companies()->sync($assignableIds);
             }
 
-            return $this->successRedirect('users.index', 'User updated');
+            // Profile upsert (basic fields + images)
+            $profile = (array) ($data['profile'] ?? []);
+            $allowedProfileKeys = [
+                'bio','position','phone','website','linkedin','twitter','facebook','instagram','photo','cover_photo',
+            ];
+            $profileData = array_intersect_key($profile, array_flip($allowedProfileKeys));
+            // Normalize empty strings to nulls
+            $profileData = array_map(function ($v) { return ($v === '') ? null : $v; }, $profileData);
+
+            // Load existing profile to manage file replacements/removals
+            $existingProfile = $user->profile()->first();
+
+            // Handle uploaded photo
+            if ($request->hasFile('photo_file')) {
+                $file = $request->file('photo_file');
+                if ($file && $file->isValid()) {
+                    // delete old file if exists
+                    if ($existingProfile && ! empty($existingProfile->photo)) {
+                        try { Storage::delete($existingProfile->photo); } catch (\Throwable $e) {}
+                    }
+                    $path = $file->store('profiles/photos', 'public');
+                    // store path relative to disk root for consistency with Storage::delete
+                    $profileData['photo'] = $path;
+                }
+            } elseif ((bool) $request->boolean('photo_removed')) {
+                if ($existingProfile && ! empty($existingProfile->photo)) {
+                    try { Storage::delete($existingProfile->photo); } catch (\Throwable $e) {}
+                }
+                $profileData['photo'] = null;
+            }
+
+            // Handle uploaded cover photo
+            if ($request->hasFile('cover_photo_file')) {
+                $file = $request->file('cover_photo_file');
+                if ($file && $file->isValid()) {
+                    if ($existingProfile && ! empty($existingProfile->cover_photo)) {
+                        try { Storage::delete($existingProfile->cover_photo); } catch (\Throwable $e) {}
+                    }
+                    $path = $file->store('profiles/covers', 'public');
+                    $profileData['cover_photo'] = $path;
+                }
+            } elseif ((bool) $request->boolean('cover_photo_removed')) {
+                if ($existingProfile && ! empty($existingProfile->cover_photo)) {
+                    try { Storage::delete($existingProfile->cover_photo); } catch (\Throwable $e) {}
+                }
+                $profileData['cover_photo'] = null;
+            }
+
+            if (! empty($profileData)) {
+                $user->profile()->updateOrCreate([], $profileData);
+            }
+
+            return $this->successRedirect('members.index', 'User updated');
         } catch (\Throwable $th) {
             $this->logException($th, 'update user', [
                 'user_id' => $user->getKey(),
@@ -297,9 +363,54 @@ class UserController extends BaseController
     {
         try {
             Gate::authorize('delete', $user);
-            $user->delete();
+            DB::transaction(function () use ($user) {
+                // Detach relationships
+                $user->companies()->detach();
+                $user->teams()->detach();
 
-            return $this->successRedirect('users.index', 'User deleted');
+                // Remove roles and direct permissions (Spatie)
+                if (method_exists($user, 'syncRoles')) {
+                    $user->syncRoles([]);
+                }
+                if (method_exists($user, 'syncPermissions')) {
+                    $user->syncPermissions([]);
+                }
+
+                // Delete related profile (and its media if any)
+                if ($user->relationLoaded('profile')) {
+                    $profile = $user->profile;
+                } else {
+                    $profile = $user->profile()->first();
+                }
+                if ($profile) {
+                    try {
+                        if (! empty($profile->photo)) {
+                            Storage::delete($profile->photo);
+                        }
+                        if (! empty($profile->cover_photo)) {
+                            Storage::delete($profile->cover_photo);
+                        }
+                    } catch (\Throwable $e) {
+                        // ignore file delete errors
+                    }
+                    $profile->delete();
+                }
+
+                // Delete related contact card if exists
+                if ($user->relationLoaded('contactCard')) {
+                    $contact = $user->contactCard;
+                } else {
+                    $contact = $user->contactCard()->first();
+                }
+                if ($contact) {
+                    $contact->delete();
+                }
+
+                // Finally, delete the user
+                $user->delete();
+            });
+
+            return $this->successRedirect('members.index', 'User deleted');
         } catch (\Throwable $th) {
             $this->logException($th, 'delete user', [
                 'user_id' => $user->getKey(),

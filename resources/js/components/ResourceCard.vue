@@ -38,7 +38,7 @@ function onDelete() {
     <Card>
         <CardHeader>
             <img
-                :src="photo ?? 'https://placehold.co/400'"
+                :src="photo ?? 'https://placehold.co/600x200'"
                 alt="photo"
                 class="h-24 w-full object-contain"
             />

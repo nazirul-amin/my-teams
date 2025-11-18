@@ -16,7 +16,7 @@ const search = ref<string>(props.filters.search || '');
 const pageIndex = ref<number>(Number((props.users?.current_page ?? 1) - 1));
 const canManage = computed(() => Boolean(is('admin') || is('super-admin')));
 
-const breadcrumbs = [{ title: 'Users', href: '/users' }];
+const breadcrumbs = [{ title: 'Members', href: '/members' }];
 
 const items = ref<any[]>(props.users?.data || []);
 const isLoadingMore = ref(false);
@@ -28,7 +28,7 @@ const hasMore = computed(
 
 function goto(params: Record<string, any> = {}) {
     router.get(
-        '/users',
+        '/members',
         {
             search: search.value || undefined,
             page: pageIndex.value + 1,
@@ -90,14 +90,14 @@ function loadMore() {
                     <input
                         v-model="search"
                         type="text"
-                        placeholder="Search users..."
+                        placeholder="Search members..."
                         class="w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
                     />
                 </div>
 
                 <div class="ml-auto flex items-center gap-2">
-                    <Link v-if="canManage" href="/users/create">
-                        <UiButton>Create</UiButton>
+                    <Link v-if="canManage" href="/members/create">
+                        <UiButton>Add Member</UiButton>
                     </Link>
                 </div>
             </div>
@@ -129,9 +129,9 @@ function loadMore() {
                                 : []),
                         ]"
                         :can-manage="canManage"
-                        :show-url="`/users/${user.id}`"
-                        :edit-url="`/users/${user.id}/edit`"
-                        :delete-url="`/users/${user.id}`"
+                        :show-url="`/members/${user.id}`"
+                        :edit-url="`/members/${user.id}/edit`"
+                        :delete-url="`/members/${user.id}`"
                     />
                 </template>
             </ResourceGrid>

@@ -7,8 +7,8 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Link, useForm } from '@inertiajs/vue3';
 
 const breadcrumbs = [
-    { title: 'Users', href: '/users' },
-    { title: 'Create User', href: '/users/create' },
+    { title: 'Members', href: '/members' },
+    { title: 'Add Member', href: '/members/create' },
 ];
 
 const props = defineProps<{
@@ -24,7 +24,7 @@ const form = useForm({
 });
 
 function submit() {
-    form.post('/users', { preserveScroll: true });
+    form.post('/members', { preserveScroll: true });
 }
 </script>
 
@@ -90,7 +90,7 @@ function submit() {
                     <UiButton type="submit" :disabled="form.processing"
                         >Create</UiButton
                     >
-                    <Link href="/users">
+                    <Link href="/members">
                         <UiButton variant="outline" type="button"
                             >Cancel</UiButton
                         >

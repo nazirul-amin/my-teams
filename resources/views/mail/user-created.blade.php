@@ -67,22 +67,28 @@
                             </p>
                             <p style="margin: 0 0 16px; font-size: 14px; color: #4b5563;">
                                 We've created a new {{ $appName }} account for you. Here are your
-                                login details:
+                                login details
                             </p>
 
                             <table cellpadding="0" cellspacing="0" role="presentation"
                                 style="width: 100%; margin: 0 0 16px; font-size: 14px; color: #111827; border-collapse: collapse;">
                                 <tr>
-                                    <td style="padding: 6px 0; width: 120px; color: #6b7280;">
+                                    <td style="padding: 6px 0; width: 200px; color: #6b7280;">
                                         Email
+                                    </td>
+                                    <td style="padding: 6px 0; width: 10px; color: #6b7280;">
+                                        :
                                     </td>
                                     <td style="padding: 6px 0;">
                                         <strong>{{ $user->email }}</strong>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 6px 0; width: 120px; color: #6b7280;">
+                                    <td style="padding: 6px 0; width: 200px; color: #6b7280;">
                                         Temporary password
+                                    </td>
+                                    <td style="padding: 6px 0; width: 10px; color: #6b7280;">
+                                        :
                                     </td>
                                     <td style="padding: 6px 0;">
                                         <strong>{{ $tempPassword }}</strong>

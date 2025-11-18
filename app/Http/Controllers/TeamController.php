@@ -10,6 +10,7 @@ use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class TeamController extends BaseController
@@ -262,8 +263,28 @@ class TeamController extends BaseController
     {
         try {
             Gate::authorize('delete', $team);
-            $team->users()->detach();
-            $team->delete();
+            DB::transaction(function () use ($team) {
+                // Detach members
+                $team->users()->detach();
+
+                // Remove stored logo assets if present
+                foreach (['logo_light', 'logo_dark'] as $imageField) {
+                    if (! empty($team->{$imageField})) {
+                        $publicPrefix = '/storage/';
+                        $relativePath = str_starts_with($team->{$imageField}, $publicPrefix)
+                            ? substr($team->{$imageField}, strlen($publicPrefix))
+                            : ltrim($team->{$imageField}, '/');
+                        try {
+                            Storage::disk('public')->delete($relativePath);
+                        } catch (\Throwable $e) {
+                            // ignore file delete errors
+                        }
+                    }
+                }
+
+                // Delete team
+                $team->delete();
+            });
 
             return $this->successRedirect('teams.index', 'Team deleted');
         } catch (\Throwable $th) {
