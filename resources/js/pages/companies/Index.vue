@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import DataTable from '@/components/DataTable.vue';
+import ResourceCard from '@/components/ResourceCard.vue';
+import ResourceGrid from '@/components/ResourceGrid.vue';
 import UiButton from '@/components/ui/button/Button.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { is } from 'laravel-permission-to-vuejs';
-import { computed, h, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
     companies: { type: Object, required: true }, // Laravel paginator
@@ -12,7 +13,6 @@ const props = defineProps({
 });
 
 const search = ref(props.filters.search || '');
-const perPage = ref(Number(props.filters.per_page || 10));
 const pageIndex = ref(Number((props.companies?.current_page ?? 1) - 1));
 const canManage = computed(() => Boolean(is('admin') || is('super-admin')));
 
@@ -23,127 +23,98 @@ const breadcrumbs = [
     },
 ];
 
-// TanStack Table columns
-const columns = [
-    {
-        accessorKey: 'name',
-        header: () => 'Name',
-        enableSorting: true,
-        enableColumnFilter: true,
-    },
-    {
-        accessorKey: 'slug',
-        header: () => 'Slug',
-        enableSorting: true,
-        enableColumnFilter: true,
-    },
-    {
-        accessorKey: 'address',
-        header: () => 'Address',
-        enableSorting: true,
-        enableColumnFilter: true,
-    },
-    {
-        accessorKey: 'website',
-        header: () => 'Website',
-        enableSorting: true,
-        enableColumnFilter: true,
-    },
-    {
-        id: 'actions',
-        header: () => 'Actions',
-        cell: ({ row }) => {
-            const company = row.original;
-            const children: any[] = [];
-            if (is('admin | super-admin')) {
-                children.push(
-                    h(
-                        Link,
-                        {
-                            href: `/companies/${company.id}/edit`,
-                            onClick: (e) => e.stopPropagation(),
-                        },
-                        {
-                            default: () =>
-                                h(
-                                    UiButton,
-                                    { size: 'sm', variant: 'outline' },
-                                    { default: () => 'Edit' },
-                                ),
-                        },
-                    ),
-                    h(
-                        UiButton,
-                        {
-                            size: 'sm',
-                            variant: 'destructive',
-                            onClick: (e) => {
-                                e.stopPropagation();
-                                if (confirm('Delete this company?')) {
-                                    router.delete(`/companies/${company.id}`, {
-                                        preserveScroll: true,
-                                    });
-                                }
-                            },
-                        },
-                        { default: () => 'Delete' },
-                    ),
-                );
-            } else {
-                children.push(
-                    h(
-                        Link,
-                        {
-                            href: `/companies/${company.id}`,
-                            onClick: (e) => e.stopPropagation(),
-                        },
-                        {
-                            default: () =>
-                                h(
-                                    UiButton,
-                                    { size: 'sm', variant: 'secondary' },
-                                    { default: () => 'Show' },
-                                ),
-                        },
-                    ),
-                );
-            }
-            return h('div', { class: 'flex gap-2' }, children);
-        },
-    },
-];
+const items = ref<any[]>(props.companies?.data || []);
+const isLoadingMore = ref(false);
+const hasMore = computed(
+    () =>
+        Number(props.companies?.current_page || 1) <
+        Number(props.companies?.last_page || 1),
+);
 
-function goto(params = {}) {
+function goto(params: Record<string, unknown> = {}) {
     router.get(
         '/companies',
         {
             search: search.value || undefined,
-            per_page: perPage.value,
             page: pageIndex.value + 1,
             ...params,
         },
-        { preserveState: true, preserveScroll: true, replace: true },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onSuccess: () => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('page');
+                const newSearch = url.searchParams.toString();
+                const clean = `${url.pathname}${newSearch ? `?${newSearch}` : ''}${url.hash}`;
+                window.history.replaceState({}, '', clean);
+            },
+        },
     );
 }
 
+watch(
+    () => props.companies,
+    (newVal, oldVal) => {
+        // Reset when first load or when we go back to first page
+        const currentPage = Number(newVal?.current_page || 1);
+        const previousPage = Number(oldVal?.current_page || 0);
+
+        if (!oldVal || currentPage <= 1 || currentPage <= previousPage) {
+            items.value = [...(newVal?.data || [])];
+        } else if (currentPage > previousPage) {
+            items.value = [...items.value, ...(newVal?.data || [])];
+        }
+
+        // Sync pageIndex and clear loading state
+        pageIndex.value = currentPage - 1;
+        isLoadingMore.value = false;
+    },
+    { immediate: true },
+);
+
 watch(search, () => {
-    // debounce could be added; keep immediate for now
     pageIndex.value = 0;
     goto();
 });
 
-watch(perPage, () => {
-    pageIndex.value = 0;
+function prevPage() {
+    if (pageIndex.value <= 0) return;
+    pageIndex.value -= 1;
     goto();
-});
+}
+
+function nextPage() {
+    const lastPageIndex = Number(props.companies.last_page || 1) - 1;
+    if (pageIndex.value >= lastPageIndex) return;
+    pageIndex.value += 1;
+    goto();
+}
+
+function loadMore() {
+    if (isLoadingMore.value || !hasMore.value) return;
+    isLoadingMore.value = true;
+    pageIndex.value += 1;
+    goto();
+}
 </script>
 
 <template>
     <Head title="Companies" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6">
-            <div class="mb-6 flex items-center gap-3">
+        <div class="space-y-6 p-6">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="min-w-[200px] flex-1">
+                    <input
+                        v-model="search"
+                        type="text"
+                        placeholder="Search companies..."
+                        class="w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                    />
+                </div>
+
                 <div class="ml-auto flex items-center gap-2">
                     <Link v-if="canManage" href="/companies/create">
                         <UiButton>Create</UiButton>
@@ -151,18 +122,38 @@ watch(perPage, () => {
                 </div>
             </div>
 
-            <DataTable
-                :columns="columns"
-                :data="companies.data || []"
-                :manual-pagination="true"
-                v-model:pageIndex="pageIndex"
-                :page-count="Number(companies.last_page || 1)"
-                v-model:globalFilter="search"
-                v-model:pageSize="perPage"
-                :total-count="Number(companies.total || 0)"
-                @update:pageIndex="() => goto()"
-                @update:pageSize="() => goto({ page: 1 })"
-            />
+            <ResourceGrid
+                v-if="items.length"
+                :items="items"
+                :is-loading="isLoadingMore"
+                :has-more="hasMore"
+                @load-more="loadMore"
+            >
+                <template #default="{ item }">
+                    <ResourceCard
+                        :title="item.name"
+                        :photo="item.logo_light ?? null"
+                        :lines="[
+                            ...(item.website
+                                ? [{ label: 'Website', value: item.website }]
+                                : []),
+                            ...(item.phone
+                                ? [{ label: 'Phone', value: item.phone }]
+                                : []),
+                            ...(item.address
+                                ? [{ label: 'Address', value: item.address }]
+                                : []),
+                        ]"
+                        :can-manage="canManage"
+                        :show-url="`/companies/${item.id}`"
+                        :edit-url="`/companies/${item.id}/edit`"
+                        :delete-url="`/companies/${item.id}`"
+                    />
+                </template>
+            </ResourceGrid>
+            <div v-else class="text-sm text-neutral-600">
+                No companies found.
+            </div>
         </div>
     </AppLayout>
 </template>

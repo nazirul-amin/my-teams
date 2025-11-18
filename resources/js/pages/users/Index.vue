@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import DataTable from '@/components/DataTable.vue';
+import ResourceCard from '@/components/ResourceCard.vue';
+import ResourceGrid from '@/components/ResourceGrid.vue';
 import UiButton from '@/components/ui/button/Button.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { is } from 'laravel-permission-to-vuejs';
-import { computed, h, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
     users: any;
@@ -12,144 +13,129 @@ const props = defineProps<{
 }>();
 
 const search = ref<string>(props.filters.search || '');
-const perPage = ref<number>(Number(props.filters.per_page || 10));
 const pageIndex = ref<number>(Number((props.users?.current_page ?? 1) - 1));
 const canManage = computed(() => Boolean(is('admin') || is('super-admin')));
 
 const breadcrumbs = [{ title: 'Users', href: '/users' }];
 
-const columns = [
-    {
-        accessorKey: 'name',
-        header: () => 'Name',
-        enableSorting: true,
-        enableColumnFilter: true,
-    },
-    {
-        accessorKey: 'email',
-        header: () => 'Email',
-        enableSorting: true,
-        enableColumnFilter: true,
-    },
-    {
-        accessorKey: 'profile.phone',
-        header: () => 'Phone',
-        enableSorting: true,
-        enableColumnFilter: true,
-    },
-    {
-        id: 'actions',
-        header: () => 'Actions',
-        cell: ({ row }: any) => {
-            const user = row.original;
-            const children: any[] = [];
-            if (is('admin | super-admin')) {
-                children.push(
-                    h(
-                        Link,
-                        {
-                            href: `/users/${user.id}/edit`,
-                            onClick: (e: Event) => e.stopPropagation(),
-                        },
-                        {
-                            default: () =>
-                                h(
-                                    UiButton,
-                                    { size: 'sm', variant: 'outline' },
-                                    { default: () => 'Edit' },
-                                ),
-                        },
-                    ),
-                    h(
-                        UiButton,
-                        {
-                            size: 'sm',
-                            variant: 'destructive',
-                            onClick: (e: Event) => {
-                                e.stopPropagation();
-                                if (confirm('Delete this user?')) {
-                                    router.delete(`/users/${user.id}`, {
-                                        preserveScroll: true,
-                                    });
-                                }
-                            },
-                        },
-                        { default: () => 'Delete' },
-                    ),
-                );
-            } else {
-                children.push(
-                    h(
-                        Link,
-                        {
-                            href: `/users/${user.id}`,
-                            onClick: (e: Event) => e.stopPropagation(),
-                        },
-                        {
-                            default: () =>
-                                h(
-                                    UiButton,
-                                    { size: 'sm', variant: 'secondary' },
-                                    { default: () => 'Show' },
-                                ),
-                        },
-                    ),
-                );
-            }
-            return h('div', { class: 'flex gap-2' }, children);
-        },
-    },
-];
+const items = ref<any[]>(props.users?.data || []);
+const isLoadingMore = ref(false);
+const hasMore = computed(
+    () =>
+        Number(props.users?.current_page || 1) <
+        Number(props.users?.last_page || 1),
+);
 
 function goto(params: Record<string, any> = {}) {
     router.get(
         '/users',
         {
             search: search.value || undefined,
-            per_page: perPage.value,
             page: pageIndex.value + 1,
             ...params,
         },
-        { preserveState: true, preserveScroll: true, replace: true },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onSuccess: () => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('page');
+                const newSearch = url.searchParams.toString();
+                const clean = `${url.pathname}${newSearch ? `?${newSearch}` : ''}${url.hash}`;
+                window.history.replaceState({}, '', clean);
+            },
+        },
     );
 }
+
+watch(
+    () => props.users,
+    (newVal, oldVal) => {
+        const currentPage = Number(newVal?.current_page || 1);
+        const previousPage = Number(oldVal?.current_page || 0);
+
+        if (!oldVal || currentPage <= 1 || currentPage <= previousPage) {
+            items.value = [...(newVal?.data || [])];
+        } else if (currentPage > previousPage) {
+            items.value = [...items.value, ...(newVal?.data || [])];
+        }
+
+        pageIndex.value = currentPage - 1;
+        isLoadingMore.value = false;
+    },
+    { immediate: true },
+);
 
 watch(search, () => {
     pageIndex.value = 0;
     goto();
 });
 
-watch(perPage, () => {
-    pageIndex.value = 0;
+function loadMore() {
+    if (isLoadingMore.value || !hasMore.value) return;
+    isLoadingMore.value = true;
+    pageIndex.value += 1;
     goto();
-});
+}
 </script>
 
 <template>
     <Head title="Users" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-6">
-            <div class="mb-6 flex items-center gap-3">
+        <div class="space-y-6 p-6">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="min-w-[200px] flex-1">
+                    <input
+                        v-model="search"
+                        type="text"
+                        placeholder="Search users..."
+                        class="w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                    />
+                </div>
+
                 <div class="ml-auto flex items-center gap-2">
                     <Link v-if="canManage" href="/users/create">
                         <UiButton>Create</UiButton>
                     </Link>
                 </div>
             </div>
-
-            <DataTable
-                :columns="columns"
-                :data="users.data || []"
-                :manual-pagination="true"
-                v-model:pageIndex="pageIndex"
-                :page-count="Number(users.last_page || 1)"
-                v-model:globalFilter="search"
-                v-model:pageSize="perPage"
-                :total-count="Number(users.total || 0)"
-                @update:pageIndex="() => goto()"
-                @update:pageSize="() => goto({ page: 1 })"
-            />
+            <ResourceGrid
+                v-if="items.length"
+                :items="items"
+                :is-loading="isLoadingMore"
+                :has-more="hasMore"
+                @load-more="loadMore"
+            >
+                <template #default="{ item: user }">
+                    <ResourceCard
+                        :title="user.name"
+                        :photo="user.profile?.photo ?? null"
+                        :lines="[
+                            ...(user.role_label
+                                ? [{ label: 'Role', value: user.role_label }]
+                                : []),
+                            ...(user.email
+                                ? [{ label: 'Email', value: user.email }]
+                                : []),
+                            ...(user.profile?.phone
+                                ? [
+                                      {
+                                          label: 'Phone',
+                                          value: user.profile.phone,
+                                      },
+                                  ]
+                                : []),
+                        ]"
+                        :can-manage="canManage"
+                        :show-url="`/users/${user.id}`"
+                        :edit-url="`/users/${user.id}/edit`"
+                        :delete-url="`/users/${user.id}`"
+                    />
+                </template>
+            </ResourceGrid>
+            <div v-else class="text-sm text-neutral-600">No users found.</div>
         </div>
     </AppLayout>
 </template>

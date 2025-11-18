@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enums\RolesEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 use Spatie\Permission\Traits\HasRoles;
@@ -100,4 +102,33 @@ class User extends Authenticatable
     {
         return $this->hasOne(ContactCard::class);
     }
+
+    /**
+     * The primary role name for this user.
+     */
+    public function getPrimaryRoleAttribute(): ?string
+    {
+        return $this->getRoleNames()->first() ?: null;
+    }
+
+    /**
+     * A human-readable label for the primary role.
+     */
+    public function getRoleLabelAttribute(): ?string
+    {
+        $role = $this->primary_role;
+
+        return match ($role) {
+            RolesEnum::SUPERADMIN->value => 'Super Admin',
+            RolesEnum::ADMIN->value => 'Admin',
+            RolesEnum::MANAGER->value => 'Manager',
+            RolesEnum::USER->value => 'User',
+            default => $role,
+        };
+    }
+
+    protected $appends = [
+        'primary_role',
+        'role_label',
+    ];
 }
