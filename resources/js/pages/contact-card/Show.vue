@@ -71,7 +71,7 @@ const phoneDisplay = computed(() => {
     return digits.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
 });
 const emailText = computed(() => props.user?.email ?? '');
-const photo = computed(() => props.user?.profile?.photo ?? '');
+const photo = computed(() => props.user?.profile?.photo ?? null);
 const position = computed(() => props.user?.profile?.position ?? '');
 const website = computed(() => props.user?.profile?.website ?? '');
 const companyAddressLine2 = computed(() => {
@@ -165,8 +165,11 @@ async function saveVCard() {
                         class="h-full w-full overflow-hidden rounded-full bg-neutral-50"
                     >
                         <img
-                            v-if="photo"
-                            :src="'/storage/' + photo"
+                            :src="
+                                photo
+                                    ? '/storage/' + photo
+                                    : 'https://placehold.co/200'
+                            "
                             :alt="`Avatar of ${props.user.name}`"
                             class="h-full w-full object-cover"
                         />
