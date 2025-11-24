@@ -146,7 +146,7 @@ async function saveVCard() {
             v-if="selectedBg"
             :src="selectedBg"
             alt="cover"
-            class="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            class="pointer-events-none absolute inset-0 h-full w-full object-cover lg:h-screen lg:object-contain"
         />
         <div class="absolute inset-0"></div>
 
@@ -166,8 +166,8 @@ async function saveVCard() {
                     >
                         <img
                             v-if="photo"
-                            :src="photo"
-                            alt="avatar"
+                            :src="'/storage/' + photo"
+                            :alt="`Avatar of ${props.user.name}`"
                             class="h-full w-full object-cover"
                         />
                     </div>
