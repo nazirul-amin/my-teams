@@ -38,7 +38,7 @@ function onFileChange(e: Event) {
     if (objectUrl.value) URL.revokeObjectURL(objectUrl.value);
     objectUrl.value = file ? URL.createObjectURL(file) : null;
     emit('update:modelValue', file);
-    if (file) emit('update:removed', true);
+    if (file) emit('update:removed', false);
 }
 
 function onRemove() {
@@ -77,7 +77,7 @@ watch(
 
         <div class="group relative" v-if="hasPreview">
             <img
-                :src="previewUrl"
+                :src="previewUrl ?? undefined"
                 :class="[
                     'rounded-md border bg-white object-contain',
                     previewClass ?? 'h-32 w-full',

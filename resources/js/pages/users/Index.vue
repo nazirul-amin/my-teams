@@ -256,7 +256,11 @@ function submitGenerate() {
                     <ResourceCard
                         :title="user.name"
                         :subtitle="user.profile?.position"
-                        :photo="user.profile?.photo ?? null"
+                        :photo="
+                            user.profile?.photo
+                                ? 'storage/' + user.profile.photo
+                                : null
+                        "
                         :is-avatar="true"
                         :lines="[
                             ...(user.role_label

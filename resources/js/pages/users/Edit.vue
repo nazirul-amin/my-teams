@@ -5,7 +5,7 @@ import UiButton from '@/components/ui/button/Button.vue';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import UiInput from '@/components/ui/input/Input.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const breadcrumbs = [
     { title: 'Members', href: '/members' },

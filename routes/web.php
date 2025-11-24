@@ -28,7 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::get('shared/assigned-users', [SharedController::class, 'assignedUsers'])->name('shared.assigned-users');
 
     Route::post('teams/{team}/assign-users', [TeamController::class, 'assignUsers'])->name('teams.assign-users');
-    Route::resource('members', UserController::class);
+    Route::resource('members', UserController::class)->parameters(['members' => 'user']);
     Route::post('members/{user}/contact-card', [ContactCardAdminController::class, 'store'])->name('members.contact-card.store');
     // Helpers for contact card generation dialog
     Route::get('members/{user}/companies', [UserController::class, 'companies'])->name('members.companies');
