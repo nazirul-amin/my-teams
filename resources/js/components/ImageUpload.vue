@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import VuePictureCropper, { cropper } from 'vue-picture-cropper';
 
 const props = defineProps<{
     modelValue: File | null;
@@ -19,7 +20,6 @@ const emit = defineEmits<{
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const objectUrl = ref<string | null>(null);
-
 const hasPreview = computed(() => !!previewUrl.value);
 
 const previewUrl = computed(() => {
@@ -28,6 +28,10 @@ const previewUrl = computed(() => {
     return null;
 });
 
+const isShowModal = ref(false);
+const pic = ref<string>('');
+const pendingFile = ref<File | null>(null);
+
 function onChooseFile() {
     fileInput.value?.click();
 }
@@ -35,15 +39,72 @@ function onChooseFile() {
 function onFileChange(e: Event) {
     const target = e.target as HTMLInputElement;
     const file = target.files?.[0] ?? null;
+
+    if (!file) {
+        pendingFile.value = null;
+        if (objectUrl.value) URL.revokeObjectURL(objectUrl.value);
+        objectUrl.value = null;
+        emit('update:modelValue', null);
+        return;
+    }
+
+    pendingFile.value = file;
+    emit('update:removed', false);
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+        pic.value = String(reader.result || '');
+        isShowModal.value = true;
+        if (fileInput.value) {
+            fileInput.value.value = '';
+        }
+    };
+}
+
+async function onConfirmCrop() {
+    if (!cropper || !pendingFile.value) {
+        isShowModal.value = false;
+        return;
+    }
+
+    const options: Parameters<typeof cropper.getFile>[0] = {
+        fileName: pendingFile.value.name || 'image.png',
+    };
+
+    const croppedFile = await cropper.getFile(options);
+    if (!croppedFile) {
+        return;
+    }
+
     if (objectUrl.value) URL.revokeObjectURL(objectUrl.value);
-    objectUrl.value = file ? URL.createObjectURL(file) : null;
-    emit('update:modelValue', file);
-    if (file) emit('update:removed', false);
+    objectUrl.value = URL.createObjectURL(croppedFile);
+
+    if (fileInput.value) {
+        const dt = new DataTransfer();
+        dt.items.add(croppedFile);
+        fileInput.value.files = dt.files;
+    }
+
+    emit('update:modelValue', croppedFile);
+    emit('update:removed', false);
+
+    isShowModal.value = false;
+    pic.value = '';
+    pendingFile.value = null;
+}
+
+function onCancelCrop() {
+    isShowModal.value = false;
+    pic.value = '';
+    pendingFile.value = null;
 }
 
 function onRemove() {
     if (objectUrl.value) URL.revokeObjectURL(objectUrl.value);
     objectUrl.value = null;
+    pic.value = '';
+    pendingFile.value = null;
     emit('update:modelValue', null);
     emit('update:removed', true);
 }
@@ -90,6 +151,47 @@ watch(
             >
                 Remove
             </button>
+        </div>
+
+        <div
+            v-if="isShowModal && pic"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        >
+            <div class="w-full max-w-xl rounded-md bg-white p-4 shadow-lg">
+                <div class="mb-3 text-sm font-medium">Crop image</div>
+                <div class="max-h-[60vh] w-full overflow-hidden">
+                    <VuePictureCropper
+                        :box-style="{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#f8f8f8',
+                            margin: 'auto',
+                        }"
+                        :img="pic"
+                        :options="{
+                            viewMode: 1,
+                            dragMode: 'crop',
+                            aspectRatio: NaN,
+                        }"
+                    />
+                </div>
+                <div class="mt-4 flex justify-end gap-2 text-sm">
+                    <button
+                        type="button"
+                        class="rounded-md border px-3 py-1.5 hover:bg-neutral-50"
+                        @click="onCancelCrop"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-md bg-primary px-3 py-1.5 text-white hover:opacity-90"
+                        @click="onConfirmCrop"
+                    >
+                        Apply
+                    </button>
+                </div>
+            </div>
         </div>
 
         <button
