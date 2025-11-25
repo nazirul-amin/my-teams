@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<!-- <script setup lang="ts">
 import RegisteredUserController from '@/actions/App/Http/Controllers/Auth/RegisteredUserController';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -121,5 +121,38 @@ import { LoaderCircle } from 'lucide-vue-next';
                 >
             </div>
         </Form>
+    </AuthBase>
+</template> -->
+<script setup lang="ts">
+import TextLink from '@/components/TextLink.vue';
+import { Button } from '@/components/ui/button';
+import AuthBase from '@/layouts/AuthLayout.vue';
+import { login } from '@/routes';
+import { Head } from '@inertiajs/vue3';
+</script>
+
+<template>
+    <AuthBase
+        title="Registration disabled"
+        description="Account creation is currently disabled. Please contact your administrator if you need access."
+    >
+        <Head title="Register" />
+
+        <div class="flex flex-col items-center gap-4 py-6 text-center">
+            <p class="max-w-sm text-sm text-muted-foreground">
+                This workspace does not allow self-service sign up. If you
+                believe you should have access, please reach out to your
+                administrator or use the login link below.
+            </p>
+
+            <Button as-child class="mt-2">
+                <TextLink
+                    :href="login()"
+                    class="inline-flex items-center justify-center gap-2"
+                >
+                    Go to login
+                </TextLink>
+            </Button>
+        </div>
     </AuthBase>
 </template>
