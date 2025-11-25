@@ -107,7 +107,7 @@ onClickOutside(dropdown, () => (open.value = false));
             <transition name="fade">
                 <div
                     v-if="open"
-                    class="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md border bg-popover shadow-lg"
+                    class="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border bg-popover shadow-lg"
                 >
                     <div
                         v-for="option in options"

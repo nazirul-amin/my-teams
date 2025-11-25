@@ -146,7 +146,7 @@ async function saveVCard() {
             v-if="selectedBg"
             :src="selectedBg"
             alt="cover"
-            class="pointer-events-none absolute inset-0 h-full w-full object-cover lg:h-screen lg:object-contain"
+            class="pointer-events-none absolute inset-0 h-full w-full object-cover lg:object-contain"
         />
         <div class="absolute inset-0"></div>
 
@@ -168,7 +168,8 @@ async function saveVCard() {
                             :src="
                                 photo
                                     ? '/storage/' + photo
-                                    : 'https://placehold.co/200'
+                                    : 'https://avatar.iran.liara.run/username?username=' +
+                                      props.user.name
                             "
                             :alt="`Avatar of ${props.user.name}`"
                             class="h-full w-full object-cover"
@@ -312,7 +313,7 @@ async function saveVCard() {
                 </a>
             </div>
 
-            <div class="z-1 mx-auto mt-8 w-full max-w-md px-6">
+            <div class="z-1 mx-auto mt-4 w-full max-w-md px-6">
                 <button
                     type="button"
                     @click="saveVCard"
