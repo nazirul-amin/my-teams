@@ -215,13 +215,32 @@ function submitAssign() {
                         :photo="item.logo_light ?? null"
                         :lines="[
                             ...(item.website
-                                ? [{ label: 'Website', value: item.website }]
+                                ? [
+                                      {
+                                          label: 'Website',
+                                          value: item.website,
+                                          href: item.website.startsWith('http')
+                                              ? item.website
+                                              : `https://${item.website}`,
+                                      },
+                                  ]
                                 : []),
                             ...(item.phone
-                                ? [{ label: 'Phone', value: item.phone }]
+                                ? [
+                                      {
+                                          label: 'Phone',
+                                          value: item.phone,
+                                          href: `tel:${item.phone}`,
+                                      },
+                                  ]
                                 : []),
                             ...(item.address
-                                ? [{ label: 'Address', value: item.address }]
+                                ? [
+                                      {
+                                          label: 'Address',
+                                          value: item.address,
+                                      },
+                                  ]
                                 : []),
                         ]"
                         :can-manage="canManage"
@@ -233,7 +252,7 @@ function submitAssign() {
                             <div v-if="canManage" class="flex w-full">
                                 <button
                                     type="button"
-                                    class="inline-flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                                    class="inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 text-sm font-medium text-black/80 transition-transform duration-150 hover:scale-[1.02] hover:opacity-90 disabled:opacity-60"
                                     @click.stop="openAssignDialog(item)"
                                 >
                                     Assign Members
@@ -280,14 +299,14 @@ function submitAssign() {
                     <DialogFooter>
                         <button
                             type="button"
-                            class="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                            class="inline-flex h-11 items-center justify-center rounded-md border px-3 text-sm transition-transform duration-150 hover:scale-[1.02] hover:bg-neutral-50"
                             @click="showAssign = false"
                         >
                             Cancel
                         </button>
                         <button
                             type="button"
-                            class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
+                            class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-3 text-sm text-white transition-transform duration-150 hover:scale-[1.02] hover:opacity-90 disabled:opacity-50"
                             :disabled="
                                 !selectedUserIds.length || submittingAssign
                             "

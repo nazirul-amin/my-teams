@@ -13,6 +13,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useQRCode } from '@vueuse/integrations/useQRCode';
 import { is } from 'laravel-permission-to-vuejs';
+import { LinkIcon, QrCodeIcon } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -268,16 +269,28 @@ function submitGenerate() {
                         :is-avatar="true"
                         :lines="[
                             ...(user.role_label
-                                ? [{ label: 'Role', value: user.role_label }]
+                                ? [
+                                      {
+                                          label: 'Role',
+                                          value: user.role_label,
+                                      },
+                                  ]
                                 : []),
                             ...(user.email
-                                ? [{ label: 'Email', value: user.email }]
+                                ? [
+                                      {
+                                          label: 'Email',
+                                          value: user.email,
+                                          href: `mailto:${user.email}`,
+                                      },
+                                  ]
                                 : []),
                             ...(user.profile?.phone
                                 ? [
                                       {
                                           label: 'Phone',
                                           value: user.profile.phone,
+                                          href: `tel:${user.profile.phone}`,
                                       },
                                   ]
                                 : []),
@@ -292,28 +305,30 @@ function submitGenerate() {
                         <template #actions>
                             <div
                                 v-if="contactCardUrl(user)"
-                                class="flex w-full justify-between gap-2"
+                                class="grid grid-cols-3 gap-2"
                             >
                                 <a
                                     :href="contactCardUrl(user)"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="inline-flex flex-1 cursor-pointer items-center justify-center rounded-md border p-1 text-sm hover:bg-neutral-50"
+                                    class="col-span-2 inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-md border px-3 text-sm transition-transform duration-150 hover:scale-[1.02] hover:bg-neutral-50"
                                 >
-                                    Contact Card
+                                    <LinkIcon class="mr-2 h-4 w-4" /> Contact
+                                    Card
                                 </a>
                                 <button
                                     type="button"
                                     @click.stop="openQrDialog(user)"
-                                    class="hover:bg-neutral-5 inline-flex flex-1 cursor-pointer items-center justify-center rounded-md border p-1 text-sm"
+                                    class="hover:bg-neutral-5 inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-md border px-3 text-sm transition-transform duration-150 hover:scale-[1.02]"
+                                    aria-label="View contact card QR"
                                 >
-                                    QR
+                                    <QrCodeIcon class="mr-2 h-4 w-4" /> QR
                                 </button>
                             </div>
                             <div v-if="canGenerate(user)" class="flex w-full">
                                 <button
                                     type="button"
-                                    class="inline-flex flex-1 cursor-pointer items-center justify-center rounded-md border p-1 text-sm hover:bg-neutral-50"
+                                    class="inline-flex h-11 flex-1 cursor-pointer items-center justify-center rounded-md bg-secondary px-3 text-sm font-medium text-black/80 transition-transform duration-150 hover:scale-[1.02] hover:opacity-90 disabled:opacity-60"
                                     @click.stop="openGenerateDialog(user)"
                                 >
                                     {{
@@ -321,7 +336,7 @@ function submitGenerate() {
                                             ? 'Regenerate'
                                             : 'Generate'
                                     }}
-                                    Contact Card
+                                    Card
                                 </button>
                             </div>
                         </template>
@@ -390,14 +405,14 @@ function submitGenerate() {
                 <DialogFooter>
                     <button
                         type="button"
-                        class="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                        class="inline-flex h-11 items-center justify-center rounded-md border px-3 text-sm transition-transform duration-150 hover:scale-[1.02] hover:bg-neutral-50"
                         @click="showDialog = false"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
-                        class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50"
+                        class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-3 text-sm text-white transition-transform duration-150 hover:scale-[1.02] hover:opacity-90 disabled:opacity-50"
                         :disabled="!selectedCompanyId || !selectedTeamId"
                         @click="submitGenerate"
                     >
@@ -435,13 +450,13 @@ function submitGenerate() {
                             v-if="currentQrDataUrl"
                             :href="currentQrDataUrl"
                             download="contact-card-qr.png"
-                            class="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-neutral-50"
+                            class="inline-flex h-11 items-center justify-center rounded-md border px-3 text-sm transition-transform duration-150 hover:scale-[1.02] hover:bg-neutral-50"
                         >
                             Download
                         </a>
                         <button
                             type="button"
-                            class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-white hover:opacity-90"
+                            class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-3 text-sm text-white transition-transform duration-150 hover:scale-[1.02] hover:opacity-90"
                             @click="showQrDialog = false"
                         >
                             Close
