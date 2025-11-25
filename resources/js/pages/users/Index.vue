@@ -66,7 +66,7 @@ function goto(params: Record<string, any> = {}) {
 function profilePhotoUrl(user: any): string {
     const photo = user?.profile?.photo;
     if (!photo || typeof photo !== 'string')
-        return 'https://avatar.iran.liara.run/username?username=' + user.name;
+        return 'https://ui-avatars.com/api/?name=' + user.name;
     if (photo.startsWith('/storage/') || photo.startsWith('http')) return photo;
     return `/storage/${photo}`;
 }

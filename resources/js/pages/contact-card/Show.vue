@@ -168,7 +168,7 @@ async function saveVCard() {
                             :src="
                                 photo
                                     ? '/storage/' + photo
-                                    : 'https://avatar.iran.liara.run/username?username=' +
+                                    : 'https://ui-avatars.com/api/?name=' +
                                       props.user.name
                             "
                             :alt="`Avatar of ${props.user.name}`"
