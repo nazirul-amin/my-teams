@@ -60,14 +60,23 @@ function onDelete() {
             <div
                 v-for="(line, index) in lines || []"
                 :key="index"
-                class="text-xs text-neutral-700"
+                class="flex text-xs text-neutral-700"
             >
                 <template v-if="line.label">
-                    <span class="font-medium">{{ line.label }}:</span>
-                    <span class="ml-1">{{ line.value }}</span>
+                    <span
+                        class="font-medium whitespace-nowrap"
+                        :title="`${line.label}: ${line.value}`"
+                    >
+                        {{ line.label }}:
+                    </span>
+                    <span class="ml-1 flex-1 truncate" :title="line.value">
+                        {{ line.value }}
+                    </span>
                 </template>
                 <template v-else>
-                    <span>{{ line.value }}</span>
+                    <span class="flex-1 truncate" :title="line.value">
+                        {{ line.value }}
+                    </span>
                 </template>
             </div>
         </CardContent>

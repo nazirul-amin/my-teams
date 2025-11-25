@@ -64,6 +64,21 @@ function submit() {
     const originalTransform = form.transform;
     form.transform((data) => {
         const payload: any = { ...data, _method: 'put' };
+
+        // Do not send display URLs (e.g. "/storage/...") for existing profile images
+        if (payload.profile && typeof payload.profile.photo === 'string') {
+            if (payload.profile.photo.startsWith('/storage/')) {
+                delete payload.profile.photo;
+            }
+        }
+        if (
+            payload.profile &&
+            typeof payload.profile.cover_photo === 'string'
+        ) {
+            if (payload.profile.cover_photo.startsWith('/storage/')) {
+                delete payload.profile.cover_photo;
+            }
+        }
         // Omit false remove flags to avoid accidental deletion
         if (!payload.photo_removed) delete payload.photo_removed;
         if (!payload.cover_photo_removed) delete payload.cover_photo_removed;
