@@ -57,7 +57,16 @@ const photoFile = ref<File | null>(null);
                         <ImageUpload
                             v-model="photoFile"
                             name="photo"
-                            :initial-url="props.profile?.photo ?? null"
+                            :initial-url="
+                                props.profile?.photo
+                                    ? props.profile.photo.startsWith(
+                                          '/storage/',
+                                      ) ||
+                                      props.profile.photo.startsWith('http')
+                                        ? props.profile.photo
+                                        : `/storage/${props.profile.photo}`
+                                    : null
+                            "
                             accept="image/*"
                             :preview-class="'h-16 w-16 rounded-full object-cover border'"
                         />

@@ -231,8 +231,8 @@ class UserController extends BaseController
                     'twitter' => $user->profile?->twitter ?? null,
                     'facebook' => $user->profile?->facebook ?? null,
                     'instagram' => $user->profile?->instagram ?? null,
-                    'photo' => $user->profile?->photo ? Storage::url($user->profile->photo) : null,
-                    'cover_photo' => $user->profile?->cover_photo ? Storage::url($user->profile->cover_photo) : null,
+                    'photo' => $user->profile?->photo ?? null,
+                    'cover_photo' => $user->profile?->cover_photo ?? null,
                 ],
             ],
             'companies' => $companies,
@@ -312,21 +312,19 @@ class UserController extends BaseController
             if ($request->hasFile('photo_file')) {
                 $file = $request->file('photo_file');
                 if ($file && $file->isValid()) {
-                    // delete old file if exists
                     if ($existingProfile && ! empty($existingProfile->photo)) {
                         try {
-                            Storage::delete($existingProfile->photo);
+                            Storage::disk('public')->delete($existingProfile->photo);
                         } catch (\Throwable $e) {
                         }
                     }
                     $path = $file->store('profiles/photos', 'public');
-                    // store path relative to disk root for consistency with Storage::delete
                     $profileData['photo'] = $path;
                 }
             } elseif ((bool) $request->boolean('photo_removed')) {
                 if ($existingProfile && ! empty($existingProfile->photo)) {
                     try {
-                        Storage::delete($existingProfile->photo);
+                        Storage::disk('public')->delete($existingProfile->photo);
                     } catch (\Throwable $e) {
                     }
                 }
@@ -339,7 +337,7 @@ class UserController extends BaseController
                 if ($file && $file->isValid()) {
                     if ($existingProfile && ! empty($existingProfile->cover_photo)) {
                         try {
-                            Storage::delete($existingProfile->cover_photo);
+                            Storage::disk('public')->delete($existingProfile->cover_photo);
                         } catch (\Throwable $e) {
                         }
                     }
@@ -349,7 +347,7 @@ class UserController extends BaseController
             } elseif ((bool) $request->boolean('cover_photo_removed')) {
                 if ($existingProfile && ! empty($existingProfile->cover_photo)) {
                     try {
-                        Storage::delete($existingProfile->cover_photo);
+                        Storage::disk('public')->delete($existingProfile->cover_photo);
                     } catch (\Throwable $e) {
                     }
                 }
@@ -397,10 +395,10 @@ class UserController extends BaseController
                 if ($profile) {
                     try {
                         if (! empty($profile->photo)) {
-                            Storage::delete($profile->photo);
+                            Storage::disk('public')->delete($profile->photo);
                         }
                         if (! empty($profile->cover_photo)) {
-                            Storage::delete($profile->cover_photo);
+                            Storage::disk('public')->delete($profile->cover_photo);
                         }
                     } catch (\Throwable $e) {
                         // ignore file delete errors

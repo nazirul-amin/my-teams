@@ -23,6 +23,9 @@ class StoreUserRequest extends FormRequest
             // optional: assign companies on create
             'company_ids' => ['array'],
             'company_ids.*' => ['string'],
+
+            // optional profile photo on create
+            'photo_file' => ['nullable', 'file', 'image', 'max:5120'],
         ];
     }
 }

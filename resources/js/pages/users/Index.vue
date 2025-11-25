@@ -63,6 +63,13 @@ function goto(params: Record<string, any> = {}) {
     );
 }
 
+function profilePhotoUrl(user: any): string {
+    const photo = user?.profile?.photo;
+    if (!photo || typeof photo !== 'string') return '';
+    if (photo.startsWith('/storage/') || photo.startsWith('http')) return photo;
+    return `/storage/${photo}`;
+}
+
 watch(
     () => props.users,
     (newVal, oldVal) => {
@@ -256,11 +263,7 @@ function submitGenerate() {
                     <ResourceCard
                         :title="user.name"
                         :subtitle="user.profile?.position"
-                        :photo="
-                            user.profile?.photo
-                                ? 'storage/' + user.profile.photo
-                                : null
-                        "
+                        :photo="profilePhotoUrl(user)"
                         :is-avatar="true"
                         :lines="[
                             ...(user.role_label

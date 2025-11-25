@@ -52,10 +52,28 @@ class ProfileController extends Controller
             'bio', 'position', 'phone', 'website', 'linkedin', 'twitter', 'facebook', 'instagram', 'cover_photo',
         ]));
 
-        // Handle uploaded profile photo
+        // Load existing profile for file management
+        $existingProfile = $user->profile()->first();
+
+        // Handle uploaded profile photo (replace)
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('profiles', 'public');
-            $profileData['photo'] = Storage::url($path);
+            if ($existingProfile && ! empty($existingProfile->photo)) {
+                try {
+                    Storage::disk('public')->delete($existingProfile->photo);
+                } catch (\Throwable $e) {
+                }
+            }
+            $path = $request->file('photo')->store('profiles/photos', 'public');
+            $profileData['photo'] = $path;
+        } elseif ((bool) $request->boolean('photo_removed')) {
+            // Optional flag to explicitly remove existing photo
+            if ($existingProfile && ! empty($existingProfile->photo)) {
+                try {
+                    Storage::disk('public')->delete($existingProfile->photo);
+                } catch (\Throwable $e) {
+                }
+            }
+            $profileData['photo'] = null;
         }
         if (! empty($profileData)) {
             $user->profile()->updateOrCreate([], $profileData);

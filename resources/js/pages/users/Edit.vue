@@ -109,9 +109,17 @@ function submit() {
                         <ImageUpload
                             v-model="form.photo_file"
                             v-model:removed="form.photo_removed"
-                            :initial-url="form.profile.photo || null"
+                            :initial-url="
+                                form.profile.photo
+                                    ? form.profile.photo.startsWith(
+                                          '/storage/',
+                                      ) || form.profile.photo.startsWith('http')
+                                        ? form.profile.photo
+                                        : `/storage/${form.profile.photo}`
+                                    : null
+                            "
                             name="photo"
-                            preview-class="h-32 w-full"
+                            preview-class="h-16 w-16 rounded-full object-cover border"
                         />
                         <FieldError v-if="form.errors.photo_file">{{
                             form.errors.photo_file
