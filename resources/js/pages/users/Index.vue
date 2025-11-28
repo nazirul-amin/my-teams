@@ -445,22 +445,24 @@ function submitGenerate() {
                         </div>
                     </div>
 
-                    <div class="flex w-full items-center justify-end gap-2">
-                        <a
-                            v-if="currentQrDataUrl"
-                            :href="currentQrDataUrl"
-                            download="contact-card-qr.png"
-                            class="inline-flex h-11 items-center justify-center rounded-md border px-3 text-sm transition-transform duration-150 hover:scale-[1.02] hover:bg-neutral-50"
-                        >
-                            Download
-                        </a>
+                    <div
+                        class="mt-2 flex w-full items-center justify-end gap-2"
+                    >
                         <button
                             type="button"
-                            class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-3 text-sm text-white transition-transform duration-150 hover:scale-[1.02] hover:opacity-90"
+                            class="inline-flex h-11 items-center justify-center rounded-md border px-3 text-sm transition-transform duration-150 hover:scale-[1.02] hover:bg-neutral-50"
                             @click="showQrDialog = false"
                         >
                             Close
                         </button>
+                        <a
+                            v-if="currentQrDataUrl"
+                            :href="currentQrDataUrl"
+                            download="contact-card-qr.png"
+                            class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-3 text-sm text-white transition-transform duration-150 hover:scale-[1.02] hover:opacity-90"
+                        >
+                            Download
+                        </a>
                     </div>
                 </div>
             </DialogContent>
