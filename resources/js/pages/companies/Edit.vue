@@ -66,7 +66,7 @@ function submit() {
 
 const breadcrumbs = [
     { title: 'Companies', href: '/companies' },
-    { title: 'Edit Company', href: `/companies/${props.company.id}/edit` },
+    { title: `${props.company.name}` },
 ];
 
 function slugify(v) {

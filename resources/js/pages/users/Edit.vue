@@ -7,11 +7,6 @@ import UiInput from '@/components/ui/input/Input.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
-const breadcrumbs = [
-    { title: 'Members', href: '/members' },
-    { title: 'Edit Member', href: '' },
-];
-
 const props = defineProps<{
     user: {
         id: string;
@@ -35,6 +30,11 @@ const props = defineProps<{
     roles: Array<{ value: string; label: string }>;
     current_role: string | null;
 }>();
+
+const breadcrumbs = [
+    { title: 'Members', href: '/members' },
+    { title: `${props.user.name}` },
+];
 
 const form = useForm({
     name: props.user.name,

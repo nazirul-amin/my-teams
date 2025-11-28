@@ -17,7 +17,7 @@ const props = defineProps({
 
 const breadcrumbs = [
     { title: 'Teams', href: '/teams' },
-    { title: 'Edit Team', href: `/teams/${props.team?.id}/edit` },
+    { title: `${props.team?.name}` },
 ];
 
 const form = useForm({
