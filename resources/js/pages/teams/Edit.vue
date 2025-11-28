@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import ImageUpload from '@/components/ImageUpload.vue';
 import MultiSelect from '@/components/MultiSelect.vue';
+import AlertDialog from '@/components/ui/alert-dialog/AlertDialog.vue';
+import AlertDialogAction from '@/components/ui/alert-dialog/AlertDialogAction.vue';
+import AlertDialogCancel from '@/components/ui/alert-dialog/AlertDialogCancel.vue';
+import AlertDialogContent from '@/components/ui/alert-dialog/AlertDialogContent.vue';
+import AlertDialogDescription from '@/components/ui/alert-dialog/AlertDialogDescription.vue';
+import AlertDialogFooter from '@/components/ui/alert-dialog/AlertDialogFooter.vue';
+import AlertDialogHeader from '@/components/ui/alert-dialog/AlertDialogHeader.vue';
+import AlertDialogTitle from '@/components/ui/alert-dialog/AlertDialogTitle.vue';
+import AlertDialogTrigger from '@/components/ui/alert-dialog/AlertDialogTrigger.vue';
 import UiButton from '@/components/ui/button/Button.vue';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import UiInput from '@/components/ui/input/Input.vue';
@@ -56,9 +65,7 @@ function submit() {
 }
 
 function destroyTeam() {
-    if (confirm('Delete this team?')) {
-        router.delete(`/teams/${props.team.id}`, { preserveScroll: true });
-    }
+    router.delete(`/teams/${props.team.id}`, { preserveScroll: true });
 }
 
 watch(
@@ -194,12 +201,44 @@ watch(
                         >
                     </Link>
                     <div class="ml-auto">
-                        <UiButton
-                            variant="destructive"
-                            type="button"
-                            @click="destroyTeam"
-                            >Delete</UiButton
-                        >
+                        <AlertDialog>
+                            <AlertDialogTrigger as-child>
+                                <UiButton variant="destructive" type="button">
+                                    Delete
+                                </UiButton>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        Delete Team
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will
+                                        permanently delete this team.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel as-child>
+                                        <UiButton
+                                            variant="outline"
+                                            type="button"
+                                        >
+                                            Cancel
+                                        </UiButton>
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction as-child>
+                                        <UiButton
+                                            variant="destructive"
+                                            type="button"
+                                            class="inline-flex items-center justify-center gap-2"
+                                            @click="destroyTeam"
+                                        >
+                                            Delete
+                                        </UiButton>
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
             </form>

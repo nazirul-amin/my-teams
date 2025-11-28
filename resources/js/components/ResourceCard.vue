@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import AlertDialog from '@/components/ui/alert-dialog/AlertDialog.vue';
+import AlertDialogAction from '@/components/ui/alert-dialog/AlertDialogAction.vue';
+import AlertDialogCancel from '@/components/ui/alert-dialog/AlertDialogCancel.vue';
+import AlertDialogContent from '@/components/ui/alert-dialog/AlertDialogContent.vue';
+import AlertDialogDescription from '@/components/ui/alert-dialog/AlertDialogDescription.vue';
+import AlertDialogFooter from '@/components/ui/alert-dialog/AlertDialogFooter.vue';
+import AlertDialogHeader from '@/components/ui/alert-dialog/AlertDialogHeader.vue';
+import AlertDialogTitle from '@/components/ui/alert-dialog/AlertDialogTitle.vue';
+import AlertDialogTrigger from '@/components/ui/alert-dialog/AlertDialogTrigger.vue';
 import UiButton from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
@@ -29,11 +38,9 @@ const props = defineProps<{
 
 function onDelete() {
     if (!props.canManage || !props.deleteUrl) return;
-    if (confirm('Delete this item?')) {
-        router.delete(props.deleteUrl, {
-            preserveScroll: true,
-        });
-    }
+    router.delete(props.deleteUrl, {
+        preserveScroll: true,
+    });
 }
 </script>
 
@@ -42,21 +49,19 @@ function onDelete() {
         class="relative overflow-hidden rounded-3xl border-2 border-transparent bg-white/80 shadow-[0_10px_30px_-10px_rgba(108,92,231,0.18)] transition-all duration-300 hover:-translate-y-2 hover:border-violet-200/80 hover:shadow-[0_18px_45px_-18px_rgba(108,92,231,0.4)]"
     >
         <div
-            class="pointer-events-none absolute -left-28 -top-28 h-72 w-72 rounded-e-full bg-violet-100/70"
+            class="pointer-events-none absolute -top-28 -left-28 h-72 w-72 rounded-e-full bg-violet-100/70"
         />
         <CardHeader
-            class="relative z-10 flex flex-col items-center gap-2 pb-2 pt-4 text-center"
+            class="relative z-10 flex flex-col items-center gap-2 pt-4 pb-2 text-center"
         >
             <img
                 :src="photo ?? 'https://placehold.co/160x160'"
                 alt="photo"
                 :class="{
-                    'h-20 w-20 rounded-[24px] bg-orange-100/80 shadow-md ring-4 ring-white/80':
+                    'h-20 w-20 rounded-[24px] bg-orange-100/80 object-cover shadow-md ring-4 ring-white/80':
                         isAvatar,
-                    'h-20 rounded-2xl bg-slate-50 shadow-md ring-4 ring-white/80':
+                    'h-20 rounded-2xl bg-slate-50 object-contain shadow-md ring-4 ring-white/80':
                         !isAvatar,
-                    'object-cover': !photo,
-                    'object-contain': photo,
                 }"
             />
             <div class="flex flex-col gap-0.5">
@@ -82,7 +87,7 @@ function onDelete() {
             >
                 <template v-if="line.label">
                     <span
-                        class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500"
+                        class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-slate-500 uppercase"
                         :title="`${line.label}: ${line.value}`"
                     >
                         {{ line.label }}
@@ -139,17 +144,50 @@ function onDelete() {
                                 <EditIcon class="h-4 w-4" />
                             </UiButton>
                         </Link>
-                        <UiButton
-                            v-if="deleteUrl"
-                            class="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-red-200 bg-red-50/70 text-xs font-semibold text-red-600 shadow-sm transition-transform duration-150 hover:scale-[1.03] hover:bg-red-100"
-                            size="sm"
-                            variant="outline"
-                            type="button"
-                            aria-label="Delete resource"
-                            @click.stop="onDelete"
-                        >
-                            <DeleteIcon class="h-4 w-4" />
-                        </UiButton>
+                        <AlertDialog v-if="deleteUrl">
+                            <AlertDialogTrigger as-child>
+                                <UiButton
+                                    class="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-red-200 bg-red-50/70 text-xs font-semibold text-red-600 shadow-sm transition-transform duration-150 hover:scale-[1.03] hover:bg-red-100"
+                                    size="sm"
+                                    variant="outline"
+                                    type="button"
+                                    aria-label="Delete resource"
+                                >
+                                    <DeleteIcon class="h-4 w-4" />
+                                </UiButton>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle
+                                        >Delete {{ title }}?</AlertDialogTitle
+                                    >
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will
+                                        permanently delete this item.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel as-child>
+                                        <UiButton
+                                            variant="outline"
+                                            type="button"
+                                        >
+                                            Cancel
+                                        </UiButton>
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction as-child>
+                                        <UiButton
+                                            variant="destructive"
+                                            type="button"
+                                            class="inline-flex items-center justify-center gap-2"
+                                            @click="onDelete"
+                                        >
+                                            Delete
+                                        </UiButton>
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </template>
             </div>
