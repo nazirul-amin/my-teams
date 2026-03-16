@@ -6,6 +6,7 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 import { edit as editContactCard } from '@/routes/contact-card';
 import { edit as editPassword } from '@/routes/password';
 import { edit as editProfile } from '@/routes/profile';
+import { edit as editSlack } from '@/routes/slack';
 import { show } from '@/routes/two-factor';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
@@ -22,6 +23,10 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Two-Factor Auth',
         href: show(),
+    },
+    {
+        title: 'Slack',
+        href: editSlack(),
     },
     // {
     //     title: 'Appearance',

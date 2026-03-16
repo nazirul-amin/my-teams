@@ -3,6 +3,7 @@
 use App\Http\Controllers\Settings\ContactCardController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Settings\SlackController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,6 +28,11 @@ Route::middleware('auth')->group(function () {
     // Contact Card settings
     Route::get('settings/contact-card', [ContactCardController::class, 'edit'])->name('contact-card.edit');
     Route::post('settings/contact-card', [ContactCardController::class, 'store'])->name('contact-card.store');
+
+    Route::get('settings/slack', [SlackController::class, 'edit'])->name('slack.edit');
+    Route::get('settings/slack/connect', [SlackController::class, 'connect'])->name('slack.connect');
+    Route::get('settings/slack/callback', [SlackController::class, 'callback'])->name('slack.callback');
+    Route::delete('settings/slack/disconnect', [SlackController::class, 'destroy'])->name('slack.destroy');
 
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');

@@ -105,6 +105,14 @@ class User extends Authenticatable implements OAuthenticatable
     }
 
     /**
+     * Connected Slack account for this user.
+     */
+    public function slackAccount(): HasOne
+    {
+        return $this->hasOne(SlackAccount::class);
+    }
+
+    /**
      * The primary role name for this user.
      */
     public function getPrimaryRoleAttribute(): ?string
