@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\RolesEnum;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -17,26 +18,42 @@ Route::get('/oauth/userinfo', function (Request $request) {
 
     $user->loadMissing([
         'teams.company',
+        'teams.users.roles',
         'companies',
         'slackAccount',
     ]);
+    $teams = $user->teams
+        ->sortBy('name')
+        ->values()
+        ->map(function ($team) {
+            $manager = $team->users
+                ->filter(fn ($candidate) => $candidate->roles->contains(
+                    fn ($role) => $role->name === RolesEnum::MANAGER->value && $role->guard_name === 'web'
+                ))
+                ->sortBy('name')
+                ->first();
 
-    $team = $user->teams->sortBy('name')->first();
-    $company = $team?->company ?? $user->companies->sortBy('name')->first();
+            return [
+                'id' => $team->getKey(),
+                'name' => $team->name,
+                'company' => [
+                    'id' => $team->company?->getKey(),
+                    'name' => $team->company?->name,
+                ],
+                'manager' => [
+                    'id' => $manager?->getKey(),
+                    'name' => $manager?->name,
+                    'email' => $manager?->email,
+                ],
+            ];
+        });
 
     $payload = [
         'id' => $user->getKey(),
         'name' => $user->name,
         'email' => $user->email,
         'email_verified_at' => $user->email_verified_at,
-        'team' => [
-            'id' => $team?->getKey(),
-            'name' => $team?->name,
-        ],
-        'company' => [
-            'id' => $company?->getKey(),
-            'name' => $company?->name,
-        ],
+        'teams' => $teams,
         'slack' => [
             'user_id' => $user->slackAccount?->slack_user_id,
         ],
