@@ -4,8 +4,8 @@ import MultiSelect from '@/components/MultiSelect.vue';
 import UiButton from '@/components/ui/button/Button.vue';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import UiInput from '@/components/ui/input/Input.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import CreateLayout from '@/layouts/page/CreateLayout.vue';
+import { Link, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
 const breadcrumbs = [
@@ -73,10 +73,7 @@ watch(
 </script>
 
 <template>
-    <Head title="Create Team" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-6">
+    <CreateLayout title="Create Team" :breadcrumbs="breadcrumbs">
             <form class="space-y-4" @submit.prevent="submit">
                 <Field>
                     <FieldLabel for="company_id">Company</FieldLabel>
@@ -180,6 +177,5 @@ watch(
                     </Link>
                 </div>
             </form>
-        </div>
-    </AppLayout>
+    </CreateLayout>
 </template>

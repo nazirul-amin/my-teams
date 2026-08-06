@@ -24,26 +24,9 @@ class UserController extends BaseController
 
         $auth = request()->user();
 
-        $query = User::query()->with(['profile', 'contactCard']);
-
-        if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            // no filter
-        } elseif ($auth->hasRole(RolesEnum::ADMIN->value)) {
-            // Admin: users they created OR users in the same companies
-            $userCompanyIds = $auth->companies()->pluck('companies.id');
-            $query->where(function ($q) use ($auth, $userCompanyIds) {
-                $q->where('created_by', $auth->getKey())
-                    ->orWhereHas('companies', function ($qc) use ($userCompanyIds) {
-                        $qc->whereIn('companies.id', $userCompanyIds);
-                    });
-            });
-        } else {
-            // Manager/User: users who share a TEAM with the auth user
-            $userTeamIds = $auth->teams()->pluck('teams.id');
-            $query->whereHas('teams', function ($q) use ($userTeamIds) {
-                $q->whereIn('teams.id', $userTeamIds);
-            });
-        }
+        $query = User::query()
+            ->visibleTo($auth)
+            ->with(['profile', 'contactCard']);
 
         if ($search = request('search')) {
             $query->where(function ($q) use ($search) {
@@ -84,37 +67,13 @@ class UserController extends BaseController
 
         $auth = request()->user();
 
-        $companiesQuery = Company::query();
-        if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            // Admin can assign companies they created OR companies they are a member of
-            $companiesQuery->where(function ($q) use ($auth) {
-                $q->where('created_by', $auth->getKey())
-                    ->orWhereHas('users', function ($m) use ($auth) {
-                        $m->where('users.id', $auth->getKey());
-                    });
-            });
-        }
-        $companies = $companiesQuery->orderBy('name')->get(['id', 'name']);
+        $companies = Company::query()
+            ->accessibleTo($auth)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         // Roles available to assign
-        $allRoles = [
-            RolesEnum::SUPERADMIN->value,
-            RolesEnum::ADMIN->value,
-            RolesEnum::MANAGER->value,
-            RolesEnum::USER->value,
-        ];
-        $assignableRoles = $auth->hasRole(RolesEnum::SUPERADMIN->value)
-            ? $allRoles
-            : [RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value];
-        $roles = collect($assignableRoles)->map(fn ($r) => [
-            'value' => $r,
-            'label' => match ($r) {
-                RolesEnum::SUPERADMIN->value => 'Super Admin',
-                RolesEnum::ADMIN->value => 'Admin',
-                RolesEnum::MANAGER->value => 'Manager',
-                default => 'User',
-            },
-        ]);
+        $roles = RolesEnum::optionsAssignableBy($auth);
 
         return Inertia::render('users/Create', [
             'companies' => $companies,
@@ -145,25 +104,17 @@ class UserController extends BaseController
 
             // Assign role (limit by assignable set)
             $requestedRole = $data['role'] ?? RolesEnum::USER->value;
-            $assignableRoles = $auth->hasRole(RolesEnum::SUPERADMIN->value)
-                ? [RolesEnum::SUPERADMIN->value, RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value]
-                : [RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value];
+            $assignableRoles = RolesEnum::valuesAssignableBy($auth);
             if (! in_array($requestedRole, $assignableRoles, true)) {
                 $requestedRole = RolesEnum::USER->value;
             }
             $user->syncRoles([$requestedRole]);
 
             // Filter assignable companies for Admin: created by admin OR admin is a member
-            $assignable = Company::query();
-            if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-                $assignable->where(function ($q) use ($auth) {
-                    $q->where('created_by', $auth->getKey())
-                        ->orWhereHas('users', function ($m) use ($auth) {
-                            $m->where('users.id', $auth->getKey());
-                        });
-                });
-            }
-            $assignableIds = $assignable->whereIn('id', $companyIds)->pluck('id');
+            $assignableIds = Company::query()
+                ->accessibleTo($auth)
+                ->whereIn('id', $companyIds)
+                ->pluck('id');
             $user->companies()->sync($assignableIds);
 
             return $this->successRedirect('members.index', 'User created');
@@ -182,39 +133,15 @@ class UserController extends BaseController
 
         $auth = request()->user();
 
-        $companiesQuery = Company::query();
-        if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            // Admin can assign companies they created OR companies they are a member of
-            $companiesQuery->where(function ($q) use ($auth) {
-                $q->where('created_by', $auth->getKey())
-                    ->orWhereHas('users', function ($m) use ($auth) {
-                        $m->where('users.id', $auth->getKey());
-                    });
-            });
-        }
-        $companies = $companiesQuery->orderBy('name')->get(['id', 'name']);
+        $companies = Company::query()
+            ->accessibleTo($auth)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         $currentCompanyIds = $user->companies()->pluck('companies.id');
 
         // Roles available to assign and current role
-        $allRoles = [
-            RolesEnum::SUPERADMIN->value,
-            RolesEnum::ADMIN->value,
-            RolesEnum::MANAGER->value,
-            RolesEnum::USER->value,
-        ];
-        $assignableRoles = $auth->hasRole(RolesEnum::SUPERADMIN->value)
-            ? $allRoles
-            : [RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value];
-        $roles = collect($assignableRoles)->map(fn ($r) => [
-            'value' => $r,
-            'label' => match ($r) {
-                RolesEnum::SUPERADMIN->value => 'Super Admin',
-                RolesEnum::ADMIN->value => 'Admin',
-                RolesEnum::MANAGER->value => 'Manager',
-                default => 'User',
-            },
-        ]);
+        $roles = RolesEnum::optionsAssignableBy($auth);
         $currentRole = $user->getRoleNames()->first();
 
         return Inertia::render('users/Edit', [
@@ -259,9 +186,7 @@ class UserController extends BaseController
 
             // Role assignment (optional)
             if (! empty($data['role'])) {
-                $assignableRoles = $auth->hasRole(RolesEnum::SUPERADMIN->value)
-                    ? [RolesEnum::SUPERADMIN->value, RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value]
-                    : [RolesEnum::ADMIN->value, RolesEnum::MANAGER->value, RolesEnum::USER->value];
+                $assignableRoles = RolesEnum::valuesAssignableBy($auth);
                 $role = in_array($data['role'], $assignableRoles, true) ? $data['role'] : null;
                 if ($role) {
                     $user->syncRoles([$role]);
@@ -282,15 +207,11 @@ class UserController extends BaseController
                         || $user->companies()->whereIn('companies.id', $adminCompanyIds)->exists();
                     abort_unless($eligible, 403);
 
-                    // Admin can assign to companies they created OR companies they are a member of
-                    $assignable->where(function ($q) use ($auth) {
-                        $q->where('created_by', $auth->getKey())
-                            ->orWhereHas('users', function ($m) use ($auth) {
-                                $m->where('users.id', $auth->getKey());
-                            });
-                    });
                 }
-                $assignableIds = $assignable->whereIn('id', $companyIds)->pluck('id');
+                $assignableIds = $assignable
+                    ->accessibleTo($auth)
+                    ->whereIn('id', $companyIds)
+                    ->pluck('id');
                 $user->companies()->sync($assignableIds);
             }
 

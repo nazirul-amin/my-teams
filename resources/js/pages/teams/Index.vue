@@ -10,8 +10,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import IndexLayout from '@/layouts/page/IndexLayout.vue';
+import { Link, router } from '@inertiajs/vue3';
 import { is } from 'laravel-permission-to-vuejs';
 import { computed, ref, watch } from 'vue';
 
@@ -177,10 +177,7 @@ function submitAssign() {
 </script>
 
 <template>
-    <Head title="Teams" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-6">
+    <IndexLayout title="Teams" :breadcrumbs="breadcrumbs">
             <div class="flex flex-wrap items-center gap-3">
                 <div class="min-w-[200px] flex-1">
                     <input
@@ -311,6 +308,5 @@ function submitAssign() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
-    </AppLayout>
+    </IndexLayout>
 </template>

@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('contact_cards', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->foreignIdFor(User::class)->unique();
-            $table->foreignIdFor(Company::class);
-            $table->foreignIdFor(Team::class);
+            $table->foreignIdFor(User::class)->unique()->constrained()->nullOnDelete();
+            $table->foreignIdFor(Company::class)->constrained()->nullOnDelete();
+            $table->foreignIdFor(Team::class)->constrained()->nullOnDelete();
             $table->string('slug')->unique();
             $table->timestamps();
         });

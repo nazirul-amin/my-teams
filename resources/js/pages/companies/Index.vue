@@ -10,8 +10,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import IndexLayout from '@/layouts/page/IndexLayout.vue';
+import { Link, router } from '@inertiajs/vue3';
 import { is } from 'laravel-permission-to-vuejs';
 import { computed, ref, watch } from 'vue';
 
@@ -103,19 +103,6 @@ watch(search, () => {
     goto();
 });
 
-function prevPage() {
-    if (pageIndex.value <= 0) return;
-    pageIndex.value -= 1;
-    goto();
-}
-
-function nextPage() {
-    const lastPageIndex = Number(props.companies.last_page || 1) - 1;
-    if (pageIndex.value >= lastPageIndex) return;
-    pageIndex.value += 1;
-    goto();
-}
-
 function loadMore() {
     if (isLoadingMore.value || !hasMore.value) return;
     isLoadingMore.value = true;
@@ -181,10 +168,7 @@ function submitAssign() {
 </script>
 
 <template>
-    <Head title="Companies" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-6">
+    <IndexLayout title="Companies" :breadcrumbs="breadcrumbs">
             <div class="flex flex-wrap items-center gap-3">
                 <div class="min-w-[200px] flex-1">
                     <input
@@ -317,6 +301,5 @@ function submitAssign() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
-    </AppLayout>
+    </IndexLayout>
 </template>

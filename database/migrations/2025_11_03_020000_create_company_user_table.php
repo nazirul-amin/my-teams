@@ -12,8 +12,8 @@ return new class extends Migration
     {
         Schema::create('company_user', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Company::class);
-            $table->foreignIdFor(User::class);
+            $table->foreignIdFor(Company::class)->constrained()->nullOnDelete();
+            $table->foreignIdFor(User::class)->constrained()->nullOnDelete();
             $table->timestamps();
             $table->unique(['company_id', 'user_id']);
         });

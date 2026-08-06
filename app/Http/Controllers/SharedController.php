@@ -32,6 +32,13 @@ class SharedController extends Controller
         abort_unless(! empty($companyId), 422, 'company_id is required');
         $company = Company::query()->findOrFail($companyId);
 
+        if ($teamId) {
+            $team = $team ?: Team::query()->findOrFail($teamId);
+            abort_unless($auth->can('assignUsers', $team), 403);
+        } else {
+            abort_unless($auth->can('assignUsers', $company), 403);
+        }
+
         // Super Admin
         if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
             $query = User::query();
@@ -49,29 +56,9 @@ class SharedController extends Controller
 
         // Admin logic
         if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-            // Target checks
-            $canTarget = false;
-            if ($teamId) {
-                $team = $team ?: Team::query()->findOrFail($teamId);
-                $canTarget = ($team->created_by === $auth->getKey())
-                    || $team->users()->where('users.id', $auth->getKey())->exists()
-                    || ($company->created_by === $auth->getKey())
-                    || $company->users()->where('users.id', $auth->getKey())->exists();
-            } else {
-                $canTarget = ($company->created_by === $auth->getKey())
-                    || $company->users()->where('users.id', $auth->getKey())->exists();
-            }
-            abort_unless($canTarget, 403);
-
             // Users created by admin OR users in same companies as admin
-            $adminCompanyIds = $auth->companies()->pluck('companies.id');
             $query = User::query()
-                ->where(function ($q) use ($auth, $adminCompanyIds) {
-                    $q->where('created_by', $auth->getKey())
-                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
-                            $qc->whereIn('companies.id', $adminCompanyIds);
-                        });
-                });
+                ->assignableBy($auth);
             // Only restrict to target company members when team_id is present
             if (! empty($teamId)) {
                 $query->whereHas('companies', function ($q) use ($companyId) {
@@ -89,10 +76,6 @@ class SharedController extends Controller
             // Manager cannot target company-level assignment (must specify a team)
             abort_unless($teamId, 403);
             $team = $team ?: Team::query()->findOrFail($teamId);
-
-            // Can target only teams assigned to them
-            $canTarget = $team->users()->where('users.id', $auth->getKey())->exists();
-            abort_unless($canTarget, 403);
 
             // Users in the target company
             $users = User::query()
@@ -132,21 +115,11 @@ class SharedController extends Controller
         // Authorization similar to assignable checks
         if ($teamId) {
             $team = $team ?: Team::query()->findOrFail($teamId);
-            if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-                $canTarget = ($team->created_by === $auth->getKey())
-                    || $team->users()->where('users.id', $auth->getKey())->exists()
-                    || ($company->created_by === $auth->getKey())
-                    || $company->users()->where('users.id', $auth->getKey())->exists();
-                abort_unless($canTarget, 403);
-            }
+            abort_unless($auth->can('assignUsers', $team), 403);
 
             $users = $team->users()->orderBy('users.name')->get(['users.id', 'users.name', 'users.email']);
         } else {
-            if (! $auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-                $canTarget = ($company->created_by === $auth->getKey())
-                    || $company->users()->where('users.id', $auth->getKey())->exists();
-                abort_unless($canTarget, 403);
-            }
+            abort_unless($auth->can('assignUsers', $company), 403);
             $users = $company->users()->orderBy('users.name')->get(['users.id', 'users.name', 'users.email']);
         }
 

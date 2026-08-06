@@ -55,6 +55,11 @@ class CompanyPolicy
             );
     }
 
+    public function assignUsers(User $user, Company $company): bool
+    {
+        return $this->update($user, $company);
+    }
+
     /**
      * Determine whether the user can delete the model.
      */

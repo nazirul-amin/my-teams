@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import ShowLayout from '@/layouts/page/ShowLayout.vue';
+import { Link } from '@inertiajs/vue3';
 
 const props = defineProps<{
     user: { id: string; name: string; email: string };
@@ -13,9 +13,7 @@ const breadcrumbs = [
 </script>
 
 <template>
-    <Head :title="`View ${props.user?.name || 'User'}`" />
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-6">
+    <ShowLayout :title="`View ${props.user?.name || 'User'}`" :breadcrumbs="breadcrumbs">
             <div class="space-y-2">
                 <div class="text-xl font-semibold">{{ props.user?.name }}</div>
                 <div class="text-sm break-all text-muted-foreground">
@@ -30,6 +28,5 @@ const breadcrumbs = [
                     >Back</Link
                 >
             </div>
-        </div>
-    </AppLayout>
+    </ShowLayout>
 </template>

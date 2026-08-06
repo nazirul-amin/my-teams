@@ -85,6 +85,11 @@ class TeamPolicy
         return false;
     }
 
+    public function assignUsers(User $user, Team $team): bool
+    {
+        return $this->update($user, $team);
+    }
+
     /**
      * Determine whether the user can delete the model.
      */

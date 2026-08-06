@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RolesEnum;
+use App\Http\Requests\AssignCompanyUsersRequest;
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -24,17 +24,9 @@ class CompanyController extends BaseController
 
         $user = request()->user();
 
-        $query = Company::query()->with(['creator:id,name']);
-
-        // Super Admin: all; others: companies they created OR where they are a member
-        if (! $user->hasRole(RolesEnum::SUPERADMIN->value)) {
-            $query->where(function ($q) use ($user) {
-                $q->where('created_by', $user->getKey())
-                    ->orWhereHas('users', function ($m) use ($user) {
-                        $m->where('users.id', $user->getKey());
-                    });
-            });
-        }
+        $query = Company::query()
+            ->accessibleTo($user)
+            ->with(['creator:id,name']);
 
         // Optional simple filters
         $this->applySearch($query, ['name', 'slug']);
@@ -60,17 +52,10 @@ class CompanyController extends BaseController
         Gate::authorize('create', Company::class);
         $auth = request()->user();
 
-        $usersQuery = User::query();
-        if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-            $adminCompanyIds = $auth->companies()->pluck('companies.id');
-            $usersQuery->where(function ($q) use ($auth, $adminCompanyIds) {
-                $q->where('created_by', $auth->getKey())
-                    ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
-                        $qc->whereIn('companies.id', $adminCompanyIds);
-                    });
-            });
-        }
-        $users = $usersQuery->orderBy('name')->get(['id', 'name', 'email']);
+        $users = User::query()
+            ->assignableBy($auth)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
 
         return Inertia::render('companies/Create', [
             'users' => $users,
@@ -101,17 +86,11 @@ class CompanyController extends BaseController
             $auth = $request->user();
             $ids = collect($data['user_ids'] ?? [])->filter();
 
-            $assignable = User::query();
-            if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-                $adminCompanyIds = $auth->companies()->pluck('companies.id');
-                $assignable->where(function ($q) use ($auth, $adminCompanyIds) {
-                    $q->where('created_by', $auth->getKey())
-                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
-                            $qc->whereIn('companies.id', $adminCompanyIds);
-                        });
-                });
-            }
-            $assignableIds = $assignable->whereIn('id', $ids)->pluck('id')->unique();
+            $assignableIds = User::query()
+                ->assignableBy($auth)
+                ->whereIn('id', $ids)
+                ->pluck('id')
+                ->unique();
             $company->users()->sync($assignableIds->all());
 
             return $this->successRedirect('companies.index', 'Company created');
@@ -144,17 +123,10 @@ class CompanyController extends BaseController
         Gate::authorize('update', $company);
         $auth = request()->user();
 
-        $usersQuery = User::query();
-        if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-            $adminCompanyIds = $auth->companies()->pluck('companies.id');
-            $usersQuery->where(function ($q) use ($auth, $adminCompanyIds) {
-                $q->where('created_by', $auth->getKey())
-                    ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
-                        $qc->whereIn('companies.id', $adminCompanyIds);
-                    });
-            });
-        }
-        $users = $usersQuery->orderBy('name')->get(['id', 'name', 'email']);
+        $users = User::query()
+            ->assignableBy($auth)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
 
         return Inertia::render('companies/Edit', [
             'company' => $company,
@@ -202,17 +174,11 @@ class CompanyController extends BaseController
             $auth = $request->user();
             $ids = collect($data['user_ids'] ?? [])->filter();
 
-            $assignable = User::query();
-            if ($auth->hasRole(RolesEnum::ADMIN->value)) {
-                $adminCompanyIds = $auth->companies()->pluck('companies.id');
-                $assignable->where(function ($q) use ($auth, $adminCompanyIds) {
-                    $q->where('created_by', $auth->getKey())
-                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
-                            $qc->whereIn('companies.id', $adminCompanyIds);
-                        });
-                });
-            }
-            $assignableIds = $assignable->whereIn('id', $ids)->pluck('id')->unique();
+            $assignableIds = User::query()
+                ->assignableBy($auth)
+                ->whereIn('id', $ids)
+                ->pluck('id')
+                ->unique();
             $company->users()->sync($assignableIds->all());
 
             return $this->successRedirect('companies.index', 'Company updated');
@@ -304,15 +270,13 @@ class CompanyController extends BaseController
     /**
      * Assign selected users to the company (adds, does not remove existing).
      */
-    public function assignUsers(Request $request, Company $company)
+    public function assignUsers(AssignCompanyUsersRequest $request, Company $company)
     {
-        Gate::authorize('update', $company);
-
         $auth = $request->user();
-        $ids = collect($request->input('user_ids', []))->filter();
+        $ids = $request->userIds();
 
         if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
-            $company->users()->sync($ids->all());
+            $company->users()->sync($ids);
         } elseif ($auth->hasRole(RolesEnum::ADMIN->value)) {
             // Admin can target companies they created or are assigned to
             $canTarget = ($company->created_by === $auth->getKey())
@@ -320,15 +284,9 @@ class CompanyController extends BaseController
             abort_unless($canTarget, 403);
 
             // Filter to users admin can assign: created by them or in their companies
-            $adminCompanyIds = $auth->companies()->pluck('companies.id');
             $assignableIds = User::query()
                 ->whereIn('id', $ids)
-                ->where(function ($q) use ($auth, $adminCompanyIds) {
-                    $q->where('created_by', $auth->getKey())
-                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
-                            $qc->whereIn('companies.id', $adminCompanyIds);
-                        });
-                })
+                ->assignableBy($auth)
                 ->pluck('id')
                 ->unique();
             $company->users()->syncWithoutDetaching($assignableIds->all());

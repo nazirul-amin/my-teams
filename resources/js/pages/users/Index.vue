@@ -9,8 +9,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import IndexLayout from '@/layouts/page/IndexLayout.vue';
+import { Link, router } from '@inertiajs/vue3';
 import { useQRCode } from '@vueuse/integrations/useQRCode';
 import { is } from 'laravel-permission-to-vuejs';
 import { LinkIcon, QrCodeIcon } from 'lucide-vue-next';
@@ -234,10 +234,7 @@ function submitGenerate() {
 </script>
 
 <template>
-    <Head title="Users" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-6">
+    <IndexLayout title="Users" :breadcrumbs="breadcrumbs">
             <div class="flex flex-wrap items-center gap-3">
                 <div class="min-w-[200px] flex-1">
                     <input
@@ -344,7 +341,6 @@ function submitGenerate() {
                 </template>
             </ResourceGrid>
             <div v-else class="text-sm text-neutral-600">No users found.</div>
-        </div>
         <!-- Generate Contact Card Dialog -->
         <Dialog :open="showDialog" @update:open="(v) => (showDialog = v)">
             <DialogContent class="sm:max-w-md">
@@ -467,5 +463,5 @@ function submitGenerate() {
                 </div>
             </DialogContent>
         </Dialog>
-    </AppLayout>
+    </IndexLayout>
 </template>

@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('teams', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->foreignIdFor(User::class, 'created_by')->index();
-            $table->foreignIdFor(Company::class, 'company_id')->index();
+            $table->foreignIdFor(User::class, 'created_by')->index()->constrained()->nullOnDelete();
+            $table->foreignIdFor(Company::class, 'company_id')->index()->constrained()->nullOnDelete();
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('logo')->nullable();

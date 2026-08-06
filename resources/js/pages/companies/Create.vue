@@ -4,7 +4,7 @@ import MultiSelect from '@/components/MultiSelect.vue';
 import UiButton from '@/components/ui/button/Button.vue';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import UiInput from '@/components/ui/input/Input.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
+import CreateLayout from '@/layouts/page/CreateLayout.vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { watch } from 'vue';
 
@@ -71,10 +71,7 @@ watch(
 </script>
 
 <template>
-    <Head title="Create Company" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-6">
+    <CreateLayout title="Create Company" :breadcrumbs="breadcrumbs">
             <form class="space-y-4" @submit.prevent="submit">
                 <Field>
                     <FieldLabel for="name">Name</FieldLabel>
@@ -263,6 +260,5 @@ watch(
                     </Link>
                 </div>
             </form>
-        </div>
-    </AppLayout>
+    </CreateLayout>
 </template>

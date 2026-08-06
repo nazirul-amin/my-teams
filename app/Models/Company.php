@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\RolesEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +15,20 @@ class Company extends Model
     use HasUlids;
 
     protected $guarded = ['id'];
+
+    public function scopeAccessibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->hasRole(RolesEnum::SUPERADMIN->value)) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $query) use ($user) {
+            $query->where('created_by', $user->getKey())
+                ->orWhereHas('users', function (Builder $users) use ($user) {
+                    $users->where('users.id', $user->getKey());
+                });
+        });
+    }
 
     /**
      * Owner/creator of the company.

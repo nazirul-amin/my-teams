@@ -5,7 +5,7 @@ import { animate, splitText, stagger } from 'animejs';
 import gsap from 'gsap';
 import { onMounted } from 'vue';
 
-const { name, auth } = usePage().props;
+const { auth } = usePage().props;
 
 const CAT_SELECTOR = '#cat';
 const CAT_SHADOW_SELECTOR = '#catShadow';

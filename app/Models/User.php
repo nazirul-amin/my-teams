@@ -5,6 +5,8 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Enums\RolesEnum;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,8 +21,48 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, HasUlids, LaravelPermissionToVueJS, Notifiable, TwoFactorAuthenticatable;
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->hasRole(RolesEnum::SUPERADMIN->value)) {
+            return $query;
+        }
+
+        if ($user->hasRole(RolesEnum::ADMIN->value)) {
+            $companyIds = $user->companies()->pluck('companies.id');
+
+            return $query->where(function (Builder $query) use ($user, $companyIds) {
+                $query->where('created_by', $user->getKey())
+                    ->orWhereHas('companies', function (Builder $companies) use ($companyIds) {
+                        $companies->whereIn('companies.id', $companyIds);
+                    });
+            });
+        }
+
+        $teamIds = $user->teams()->pluck('teams.id');
+
+        return $query->whereHas('teams', function (Builder $teams) use ($teamIds) {
+            $teams->whereIn('teams.id', $teamIds);
+        });
+    }
+
+    public function scopeAssignableBy(Builder $query, User $user): Builder
+    {
+        if ($user->hasRole(RolesEnum::SUPERADMIN->value)) {
+            return $query;
+        }
+
+        $companyIds = $user->companies()->pluck('companies.id');
+
+        return $query->where(function (Builder $query) use ($user, $companyIds) {
+            $query->where('created_by', $user->getKey())
+                ->orWhereHas('companies', function (Builder $companies) use ($companyIds) {
+                    $companies->whereIn('companies.id', $companyIds);
+                });
+        });
+    }
 
     /**
      * The attributes that are mass assignable.

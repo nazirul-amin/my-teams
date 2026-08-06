@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RolesEnum;
+use App\Http\Requests\AssignTeamUsersRequest;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Company;
 use App\Models\Team;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -25,23 +25,9 @@ class TeamController extends BaseController
 
         $user = request()->user();
 
-        $query = Team::query()->with(['company:id,name,created_by']);
-
-        if ($user->hasRole(RolesEnum::SUPERADMIN->value)) {
-            // no additional restrictions
-        } elseif ($user->hasRole(RolesEnum::ADMIN->value)) {
-            // Admin: teams of companies they created OR are assigned to
-            $query->whereHas('company', function ($q) use ($user) {
-                $q->whereHas('users', function ($m) use ($user) {
-                    $m->where('users.id', $user->getKey());
-                })->orWhere('created_by', $user->getKey());
-            });
-        } else {
-            // Managers and regular users: only teams they are assigned to
-            $query->whereHas('users', function ($q) use ($user) {
-                $q->where('users.id', $user->getKey());
-            });
-        }
+        $query = Team::query()
+            ->accessibleTo($user)
+            ->with(['company:id,name,created_by']);
 
         // Expose whether the auth user is a member of each team (for UI gating)
         $query->withCount(['users as is_member' => function ($q) use ($user) {
@@ -71,13 +57,7 @@ class TeamController extends BaseController
 
         // Companies the user can create a team for
         $companies = Company::query()
-            ->when(! $auth->hasRole(RolesEnum::SUPERADMIN->value), function ($q) use ($auth) {
-                $q->where(function ($qq) use ($auth) {
-                    $qq->whereHas('users', function ($m) use ($auth) {
-                        $m->where('user_id', $auth->getKey());
-                    });
-                })->orWhere('created_by', $auth->getKey());
-            })
+            ->accessibleTo($auth)
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -99,17 +79,7 @@ class TeamController extends BaseController
             $auth = request()->user();
 
             // Check company access according to role
-            $allowedCompanies = Company::query()
-                ->when(! $auth->hasRole(RolesEnum::SUPERADMIN->value), function ($q) use ($auth) {
-                    $q->where(function ($qq) use ($auth) {
-                        $qq->whereHas('users', function ($m) use ($auth) {
-                            $m->where('user_id', $auth->getKey());
-                        });
-                    })->orWhere('created_by', $auth->getKey());
-                })
-                ->pluck('id');
-
-            if (! $allowedCompanies->contains($data['company_id'])) {
+            if (! Company::query()->accessibleTo($auth)->whereKey($data['company_id'])->exists()) {
                 abort(403);
             }
 
@@ -166,13 +136,7 @@ class TeamController extends BaseController
         $auth = request()->user();
 
         $companies = Company::query()
-            ->when(! $auth->hasRole(RolesEnum::SUPERADMIN->value), function ($q) use ($auth) {
-                $q->where(function ($qq) use ($auth) {
-                    $qq->whereHas('users', function ($m) use ($auth) {
-                        $m->where('user_id', $auth->getKey());
-                    });
-                })->orWhere('created_by', $auth->getKey());
-            })
+            ->accessibleTo($auth)
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -198,17 +162,7 @@ class TeamController extends BaseController
 
             $auth = request()->user();
             if (isset($data['company_id'])) {
-                $allowedCompanies = Company::query()
-                    ->when(! $auth->hasRole(RolesEnum::SUPERADMIN->value), function ($q) use ($auth) {
-                        $q->where(function ($qq) use ($auth) {
-                            $qq->whereHas('users', function ($m) use ($auth) {
-                                $m->where('user_id', $auth->getKey());
-                            });
-                        })->orWhere('created_by', $auth->getKey());
-                    })
-                    ->pluck('id');
-
-                if (! $allowedCompanies->contains($data['company_id'])) {
+                if (! Company::query()->accessibleTo($auth)->whereKey($data['company_id'])->exists()) {
                     abort(403);
                 }
             }
@@ -305,12 +259,10 @@ class TeamController extends BaseController
     /**
      * Assign selected users to the team (adds, does not remove existing). Only users from the team's company are allowed.
      */
-    public function assignUsers(Request $request, Team $team)
+    public function assignUsers(AssignTeamUsersRequest $request, Team $team)
     {
-        Gate::authorize('update', $team);
-
         $auth = $request->user();
-        $ids = collect($request->input('user_ids', []))->filter();
+        $ids = $request->userIds();
 
         if ($auth->hasRole(RolesEnum::SUPERADMIN->value)) {
             // Only assign users who are already members of the team's company
@@ -326,15 +278,9 @@ class TeamController extends BaseController
             abort_unless($canTarget, 403);
 
             // Filter to users admin can assign: created by them or in their companies
-            $adminCompanyIds = $auth->companies()->pluck('companies.id');
             $assignableIds = User::query()
                 ->whereIn('id', $ids)
-                ->where(function ($q) use ($auth, $adminCompanyIds) {
-                    $q->where('created_by', $auth->getKey())
-                        ->orWhereHas('companies', function ($qc) use ($adminCompanyIds) {
-                            $qc->whereIn('companies.id', $adminCompanyIds);
-                        });
-                })
+                ->assignableBy($auth)
                 ->pluck('id')
                 ->unique();
 
